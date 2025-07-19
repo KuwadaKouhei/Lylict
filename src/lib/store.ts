@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { counterReducer } from './features/counterSlice';
+import { MmapReducer } from './features/mmapSlice';
 
 export const store = configureStore({
   reducer: {
-    counter: counterReducer,
+    mmap: MmapReducer,
   },
 });
 
