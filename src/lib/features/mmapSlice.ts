@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 interface MMapState {
   MMapId?: string;
   MMapName?: string;
-  nodes: { id: string; position: { x: number; y: number; }; data: { text: string; }; type: string; }[];
+  nodes: { id: string; position: { x: number; y: number; }; data: { text: string; }; type: string; dragHandle: string; }[];
   edges: { id: string; source: string; target: string; }[];
 }
 
@@ -12,8 +12,8 @@ const initialState: MMapState = {
   MMapName: undefined,
   nodes: [
     // Example node structure
-    { id: 'node1', position: { x: 0, y: 0 }, data: { text: 'Node 1' }, type: 'text' },
-    { id: 'node2', position: { x: 100, y: 100 }, data: { text: 'Node 2' }, type: 'text' },
+    { id: 'node1', position: { x: 0, y: 0 }, data: { text: 'Node 1' }, type: 'text', dragHandle: '.drag-handle__custom' },
+    { id: 'node2', position: { x: 200, y: 200 }, data: { text: 'Node 2' }, type: 'text', dragHandle: '.drag-handle__custom' },
   ],
   edges: [],
 }
@@ -26,8 +26,7 @@ export const MMapSlice = createSlice({
       state.MMapId = action.payload;
     },
     setMMapData: (state, action) => {
-      const { MMapId, nodes, edges } = action.payload;
-      state.MMapId = MMapId;
+      const { nodes, edges } = action.payload;
       state.nodes = nodes;
       state.edges = edges;
     },

@@ -1,11 +1,15 @@
+
 import { configureStore } from '@reduxjs/toolkit';
-import { MmapReducer } from './features/mmapSlice';
+import mindmapReducer from './features/mindmap/mindmapSlice';
 
-export const store = configureStore({
-  reducer: {
-    mmap: MmapReducer,
-  },
-});
+export const makeStore = () => {
+  return configureStore({
+    reducer: {
+      mindmap: mindmapReducer,
+    },
+  });
+};
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+export type AppStore = ReturnType<typeof makeStore>;
+export type RootState = ReturnType<AppStore['getState']>;
+export type AppDispatch = AppStore['dispatch'];

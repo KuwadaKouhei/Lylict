@@ -1,0 +1,186 @@
+
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { Node, Edge } from '@xyflow/react';
+import { MindMap, getAllMindMaps, getMindMap, saveMindMap, updateMindMap, deleteMindMap } from '../../mindmapService';
+
+interface MindmapState {
+  nodes: Node[];
+  edges: Edge[];
+  currentMindMapId: string | null;
+  currentMindMapTitle: string;
+  savedMindMaps: MindMap[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+const initialState: MindmapState = {
+  nodes: [],
+  edges: [],
+  currentMindMapId: null,
+  currentMindMapTitle: 'Untitled MindMap',
+  savedMindMaps: [],
+  isLoading: false,
+  error: null,
+};
+
+// 非同期アクション
+export const fetchAllMindMaps = createAsyncThunk(
+  'mindmap/fetchAll',
+  async () => {
+    const mindMaps = await getAllMindMaps();
+    return mindMaps;
+  }
+);
+
+export const loadMindMap = createAsyncThunk(
+  'mindmap/load',
+  async (id: string) => {
+    const mindMap = await getMindMap(id);
+    return mindMap;
+  }
+);
+
+export const saveCurrentMindMap = createAsyncThunk(
+  'mindmap/save',
+  async (_, { getState }) => {
+    const state = getState() as { mindmap: MindmapState };
+    const { nodes, edges, currentMindMapTitle, currentMindMapId } = state.mindmap;
+    
+    const mindMapData = {
+      title: currentMindMapTitle,
+      nodes,
+      edges,
+    };
+
+    if (currentMindMapId) {
+      await updateMindMap(currentMindMapId, mindMapData);
+      return currentMindMapId;
+    } else {
+      const newId = await saveMindMap(mindMapData);
+      return newId;
+    }
+  }
+);
+
+export const deleteSelectedMindMap = createAsyncThunk(
+  'mindmap/delete',
+  async (id: string) => {
+    await deleteMindMap(id);
+    return id;
+  }
+);
+
+const mindmapSlice = createSlice({
+  name: 'mindmap',
+  initialState,
+  reducers: {
+    setNodes: (state, action: PayloadAction<Node[]>) => {
+      state.nodes = action.payload;
+    },
+    setEdges: (state, action: PayloadAction<Edge[]>) => {
+      state.edges = action.payload;
+    },
+    addNode: (state, action: PayloadAction<Node>) => {
+      state.nodes.push(action.payload);
+    },
+    addEdge: (state, action: PayloadAction<Edge>) => {
+      state.edges.push(action.payload);
+    },
+    removeNode: (state, action: PayloadAction<string>) => {
+      const nodeIdToRemove = action.payload;
+      state.nodes = state.nodes.filter(node => node.id !== nodeIdToRemove);
+      state.edges = state.edges.filter(edge => edge.source !== nodeIdToRemove && edge.target !== nodeIdToRemove);
+    },
+    setCurrentMindMapTitle: (state, action: PayloadAction<string>) => {
+      state.currentMindMapTitle = action.payload;
+    },
+    createNewMindMap: (state) => {
+      state.nodes = [];
+      state.edges = [];
+      state.currentMindMapId = null;
+      state.currentMindMapTitle = 'Untitled MindMap';
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // fetchAllMindMaps
+      .addCase(fetchAllMindMaps.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllMindMaps.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.savedMindMaps = action.payload;
+      })
+      .addCase(fetchAllMindMaps.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch mind maps';
+      })
+      // loadMindMap
+      .addCase(loadMindMap.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(loadMindMap.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload) {
+          state.nodes = action.payload.nodes;
+          state.edges = action.payload.edges;
+          state.currentMindMapId = action.payload.id || null;
+          state.currentMindMapTitle = action.payload.title;
+        }
+      })
+      .addCase(loadMindMap.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to load mind map';
+      })
+      // saveCurrentMindMap
+      .addCase(saveCurrentMindMap.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(saveCurrentMindMap.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.currentMindMapId = action.payload;
+      })
+      .addCase(saveCurrentMindMap.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to save mind map';
+      })
+      // deleteSelectedMindMap
+      .addCase(deleteSelectedMindMap.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteSelectedMindMap.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.savedMindMaps = state.savedMindMaps.filter(mindMap => mindMap.id !== action.payload);
+        if (state.currentMindMapId === action.payload) {
+          state.nodes = [];
+          state.edges = [];
+          state.currentMindMapId = null;
+          state.currentMindMapTitle = 'Untitled MindMap';
+        }
+      })
+      .addCase(deleteSelectedMindMap.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to delete mind map';
+      });
+  },
+});
+
+export const { 
+  setNodes, 
+  setEdges, 
+  addNode, 
+  addEdge, 
+  removeNode, 
+  setCurrentMindMapTitle,
+  createNewMindMap,
+  clearError 
+} = mindmapSlice.actions;
+
+export default mindmapSlice.reducer;

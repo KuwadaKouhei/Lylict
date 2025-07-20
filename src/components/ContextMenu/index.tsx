@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import './ContextMenu.css'; // Assuming you have a CSS file for styling
+import './contextMenu.css'; // Assuming you have a CSS file for styling
 import Button from '@mui/material/Button';
 
 type ContextMenuProps = {

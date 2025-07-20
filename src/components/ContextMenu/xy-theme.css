@@ -1,19 +1,20 @@
 /* xyflow theme files. Delete these to start from our base */
 
 .react-flow {
+  border-radius: 20px;
   --xy-background-color: #f7f9fb;
   /* Custom Variables */
-  --xy-theme-selected: #f57dbd;
-  --xy-theme-hover: #c5c5c5;
+  --xy-theme-selected: #7df5af;
+  --xy-theme-hover: #464cff;
   --xy-theme-edge-hover: black;
-  --xy-theme-color-focus: #e8e8e8;
+  --xy-theme-color-focus: #9ea1ff;
 
   /* Built-in Variables see https://reactflow.dev/learn/customization/theming */
-  --xy-node-border-default: 1px solid #ededed;
+  --xy-node-border-default: 1px solid #9ea1ff;
 
   --xy-node-boxshadow-default:
-    0px 3.54px 4.55px 0px #00000005, 0px 3.54px 4.55px 0px #0000000d,
-    0px 0.51px 1.01px 0px #0000001a;
+    0px 3.54px 4.55px 0px #9ea1ff, 0px 3.54px 4.55px 0px #9ea1ff,
+    0px 0.51px 1.01px 0px #9ea1ff;
 
   --xy-node-border-radius-default: 8px;
 
@@ -34,6 +35,7 @@
 /* Customizing Default Theming */
 
 .react-flow__node {
+  cursor: default;
   box-shadow: var(--xy-node-boxshadow-default);
   border-radius: var(--xy-node-border-radius-default);
   background-color: var(--xy-node-background-color-default);
@@ -47,21 +49,25 @@
   border: var(--xy-node-border-default);
   color: var(--xy-node-color, var(--xy-node-color-default));
 }
- 
+
 .react-flow__node.selectable:focus {
-  box-shadow: 0px 0px 0px 4px var(--xy-theme-color-focus);
-  border-color: #d9d9d9;
+  outline: none;
+  box-shadow: var(--xy-node-boxshadow-default);
+  border-color: var(--xy-theme-color-focus);
 }
- 
+
 .react-flow__node.selectable:focus:active {
   box-shadow: var(--xy-node-boxshadow-default);
 }
- 
+
 .react-flow__node.selectable:hover,
+.react-flow__node.draggable{
+  cursor: default;
+}
 .react-flow__node.draggable:hover {
   border-color: var(--xy-theme-hover);
 }
- 
+
 .react-flow__node.selectable.selected {
   border-color: var(--xy-theme-selected);
   box-shadow: var(--xy-node-boxshadow-default);
@@ -198,7 +204,7 @@
 /* Example Input Styling */
 .xy-theme__input {
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-primary);
+  border: 0;
   border-radius: 7px;
   background-color: var(--color-background);
   transition:
@@ -206,12 +212,12 @@
     border-color 0.2s ease;
   font-size: 1rem;
   color: inherit;
+  text-align: center;
 }
  
 .xy-theme__input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(255, 0, 115, 0.3);
 }
  
 /* Specific Checkbox Styling */
