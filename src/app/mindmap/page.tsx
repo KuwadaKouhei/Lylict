@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   ReactFlow,
   Background,
@@ -17,14 +18,17 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../lib/store';
-import { setNodes, setEdges, addNode, removeNode, addEdge as mindmapAddEdge, saveCurrentMindMap } from '../../lib/features/mindmap/mindmapSlice';
+import { setNodes, setEdges, addNode, removeNode, addEdge as mindmapAddEdge, saveCurrentMindMap, setCurrentMindMapTitle, createNewMindMap } from '../../lib/features/mindmap/mindmapSlice';
 import { Button, IconButton, Typography, Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
+import HomeIcon from '@mui/icons-material/Home';
 import ContextMenu from '../../components/ContextMenu/ContextMenu';
 import CustomNode from '../../components/CustomNode/CustomNode';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import MindMapFlow from '../../components/MindMapFlow/MindMapFlow';
+import NodeTextModal from '../../components/NodeTextModal/NodeTextModal';
+import { getMindMap, updateMindMap } from '../../lib/mindmapService';
 
 const nodeTypes = {
   customNode: CustomNode,
@@ -34,7 +38,24 @@ const MindMapFlowInternal = () => {
   const dispatch: AppDispatch = useDispatch();
   const { nodes, edges } = useSelector((state: RootState) => state.mindmap);
   const [contextMenu, setContextMenu] = useState<{ top: number; left: number; nodeId: string } | null>(null);
+  const [showNodeTextModal, setShowNodeTextModal] = useState(false);
+  const [pendingNodeData, setPendingNodeData] = useState<{ targetNodeId: string; position: { x: number; y: number } } | null>(null);
   const { fitView } = useReactFlow();
+
+  // ノードが変更された時にfitViewを実行（初期ノード作成時用）
+  useEffect(() => {
+    if (nodes.length === 1 && edges.length === 0) {
+      // 初期ノードが1つだけの場合は中央にフィット
+      setTimeout(() => {
+        fitView({ 
+          duration: 500,
+          padding: 0.2,
+          minZoom: 1,
+          maxZoom: 1.5
+        });
+      }, 100);
+    }
+  }, [nodes, edges, fitView]);
 
   // 最も近いハンドルを計算する関数
   const getClosestHandle = (sourceNode: Node, targetNode: Node) => {
@@ -183,19 +204,34 @@ const MindMapFlowInternal = () => {
     // 空いている位置を時計回りで探す
     const availablePosition = findAvailablePosition(targetNode);
 
+    // モーダル表示のための情報を保存
+    setPendingNodeData({
+      targetNodeId,
+      position: availablePosition
+    });
+    setShowNodeTextModal(true);
+    setContextMenu(null);
+  };
+
+  const handleNodeTextConfirm = (text: string) => {
+    if (!pendingNodeData) return;
+
+    const targetNode = nodes.find(n => n.id === pendingNodeData.targetNodeId);
+    if (!targetNode) return;
+
     const newNode: Node = {
       id: (nodes.length + 1).toString(),
       type: 'customNode',
-      data: { label: `Node ${nodes.length + 1}`, isNew: true },
-      position: availablePosition,
+      data: { label: text, isNew: true },
+      position: pendingNodeData.position,
     };
     dispatch(addNode(newNode));
 
     // 新しいエッジにも最適なハンドルを設定
     const { sourceHandle, targetHandle } = getClosestHandle(targetNode, newNode);
     const newEdge: Edge = {
-      id: `e${targetNodeId}-${newNode.id}`,
-      source: targetNodeId,
+      id: `e${pendingNodeData.targetNodeId}-${newNode.id}`,
+      source: pendingNodeData.targetNodeId,
       target: newNode.id,
       sourceHandle,
       targetHandle,
@@ -210,9 +246,15 @@ const MindMapFlowInternal = () => {
         minZoom: 0.1,
         maxZoom: 1.5
       });
-    }, 100); // アニメーション完了後にfitViewを実行
+    }, 100);
 
-    setContextMenu(null);
+    setShowNodeTextModal(false);
+    setPendingNodeData(null);
+  };
+
+  const handleNodeTextClose = () => {
+    setShowNodeTextModal(false);
+    setPendingNodeData(null);
   };
 
   const handleDeleteFromContextMenu = () => {
@@ -248,17 +290,106 @@ const MindMapFlowInternal = () => {
           onDelete={handleDeleteFromContextMenu}
         />
       )}
+      
+      <NodeTextModal
+        isOpen={showNodeTextModal}
+        onClose={handleNodeTextClose}
+        onConfirm={handleNodeTextConfirm}
+        title="新しいノードを追加"
+      />
     </>
   );
 };
 
 const MindMapPage = () => {
-  const { currentMindMapTitle, isLoading } = useSelector((state: RootState) => state.mindmap);
+  const { currentMindMapTitle, isLoading, nodes, edges } = useSelector((state: RootState) => state.mindmap);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
   const dispatch: AppDispatch = useDispatch();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const handleSave = () => {
-    dispatch(saveCurrentMindMap());
+  const loadExistingMindMap = async (id: string) => {
+    try {
+      const mindMap = await getMindMap(id);
+      if (mindMap) {
+        dispatch(setNodes(mindMap.nodes));
+        dispatch(setEdges(mindMap.edges));
+        dispatch(setCurrentMindMapTitle(mindMap.title));
+      }
+    } catch (error) {
+      console.error('マインドマップの読み込みエラー:', error);
+    }
+  };
+
+  // URLパラメータから編集モードを検出し、既存データを読み込み
+  useEffect(() => {
+    const id = searchParams.get('id');
+    const title = searchParams.get('title');
+    const firstWord = searchParams.get('firstWord');
+    
+    if (id) {
+      // 編集モード
+      setEditingId(id);
+      loadExistingMindMap(id);
+    } else {
+      // 新規作成の場合は状態をリセット
+      setEditingId(null);
+      dispatch(createNewMindMap());
+      
+      // タイトルが指定されている場合は設定
+      if (title) {
+        dispatch(setCurrentMindMapTitle(decodeURIComponent(title)));
+      }
+      
+      // 最初のワードが指定されている場合は初期ノードを作成
+      if (firstWord) {
+        const initialNode = {
+          id: '1',
+          type: 'customNode',
+          data: { label: decodeURIComponent(firstWord), isNew: false },
+          position: { x: 0, y: 0 }, // ReactFlowの座標系の中心
+        };
+        dispatch(setNodes([initialNode]));
+        dispatch(setEdges([]));
+        
+      }
+    }
+    setInitialized(true);
+  }, [searchParams, dispatch]);
+
+  // 初期化が完了していない場合はローディング表示
+  if (!initialized) {
+    return (
+      <div style={{ height: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography variant="h6">読み込み中...</Typography>
+      </div>
+    );
+  }
+
+  const handleSave = async () => {
+    if (editingId) {
+      // 編集モード: 上書き保存
+      try {
+        await updateMindMap(editingId, {
+          title: currentMindMapTitle,
+          nodes,
+          edges,
+        });
+        alert('マインドマップが更新されました');
+      } catch (error) {
+        console.error('マインドマップの更新エラー:', error);
+        alert('保存中にエラーが発生しました');
+      }
+    } else {
+      // 新規作成モード: 新規保存
+      dispatch(saveCurrentMindMap());
+    }
+  };
+
+  const handleGoHome = () => {
+    router.push('/');
   };
 
   return (
@@ -279,12 +410,16 @@ const MindMapPage = () => {
           gap: 2,
         }}
       >
+        <IconButton onClick={handleGoHome} size="large" title="ホームに戻る">
+          <HomeIcon />
+        </IconButton>
+        
         <IconButton onClick={() => setSidebarOpen(true)} size="large">
           <MenuIcon />
         </IconButton>
         
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          {currentMindMapTitle}
+          {currentMindMapTitle} {editingId && <span style={{ fontSize: '0.8em', color: '#666' }}>(編集中)</span>}
         </Typography>
         
         <Button
@@ -294,7 +429,7 @@ const MindMapPage = () => {
           disabled={isLoading}
           size="small"
         >
-          保存
+          {editingId ? '更新' : '保存'}
         </Button>
       </Box>
       
