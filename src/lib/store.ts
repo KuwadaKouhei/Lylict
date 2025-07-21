@@ -7,6 +7,13 @@ export const makeStore = () => {
     reducer: {
       mindmap: mindmapReducer,
     },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: {
+          ignoredActions: ['mindmap/fetchAllMindMaps/fulfilled'],
+          ignoredPaths: ['mindmap.allMindMaps'],
+        },
+      }),
   });
 };
 

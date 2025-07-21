@@ -7,8 +7,7 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  orderBy, 
-  Timestamp 
+  orderBy 
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Node, Edge } from '@xyflow/react';
@@ -18,8 +17,8 @@ export interface MindMap {
   title: string;
   nodes: Node[];
   edges: Edge[];
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const COLLECTION_NAME = 'mindmaps';
@@ -27,7 +26,7 @@ const COLLECTION_NAME = 'mindmaps';
 // マインドマップを保存
 export const saveMindMap = async (mindmap: Omit<MindMap, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> => {
   try {
-    const now = Timestamp.now();
+    const now = new Date();
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       ...mindmap,
       createdAt: now,
@@ -46,7 +45,7 @@ export const updateMindMap = async (id: string, mindmap: Omit<MindMap, 'id' | 'c
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {
       ...mindmap,
-      updatedAt: Timestamp.now(),
+      updatedAt: new Date(),
     });
   } catch (error) {
     console.error('Error updating mindmap:', error);
@@ -59,10 +58,15 @@ export const getAllMindMaps = async (): Promise<MindMap[]> => {
   try {
     const q = query(collection(db, COLLECTION_NAME), orderBy('updatedAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as MindMap[];
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      };
+    }) as MindMap[];
   } catch (error) {
     console.error('Error getting mindmaps:', error);
     throw error;
@@ -76,9 +80,12 @@ export const getMindMap = async (id: string): Promise<MindMap | null> => {
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
+      const data = docSnap.data();
       return {
         id: docSnap.id,
-        ...docSnap.data(),
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
       } as MindMap;
     } else {
       return null;

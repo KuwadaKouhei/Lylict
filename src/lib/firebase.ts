@@ -2,16 +2,16 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
-// Firebase configuration (デモ用設定 - 実際の環境では環境変数を使用してください)
 const firebaseConfig = {
-  apiKey: "demo-api-key",
-  authDomain: "ideaweaver-demo.firebaseapp.com",
-  projectId: "ideaweaver-demo",
-  storageBucket: "ideaweaver-demo.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "demo-app-id"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+
