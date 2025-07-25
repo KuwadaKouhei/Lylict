@@ -90,6 +90,8 @@ export function createNodesAndEdges() {
       target: 'target',
       source: `${i}`,
       type: 'floating',
+      sourceHandle: 'right',
+      targetHandle: 'left',
       markerEnd: {
         type: MarkerType.Arrow,
       },

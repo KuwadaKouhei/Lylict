@@ -71,8 +71,95 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* タブ関連のスタイル */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tab {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #7f8c8d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  background: #f8f9fa;
+  color: #2c3e50;
+}
+
+.activeTab {
+  color: #3b82f6 !important;
+  border-bottom-color: #3b82f6 !important;
+  background: #f8feff !important;
+}
+
+.tabContent {
+  min-height: 300px;
+}
+
 .form {
   padding: 1.5rem;
+}
+
+/* 自動生成タブ用のスタイル */
+.autoGenerateInfo {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #e3f2fd 0%, #f1f8e9 100%);
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.description {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #2c3e50;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.select:disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.select option {
+  color: #2c3e50;
+  background: white;
+  font-size: 1rem;
+}
+
+.select option:hover {
+  background: #f8f9fa;
+  color: #2c3e50;
 }
 
 .inputGroup {

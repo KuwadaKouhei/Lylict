@@ -25,22 +25,256 @@ import SaveIcon from '@mui/icons-material/Save';
 import HomeIcon from '@mui/icons-material/Home';
 import ContextMenu from '../../components/ContextMenu/ContextMenu';
 import CustomNode from '../../components/CustomNode/CustomNode';
+import FloatingEdge from '../../components/CustomNode/FloatingEdge';
+import CustomConnectionLine from '../../components/CustomConnectionLine';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import MindMapFlow from '../../components/MindMapFlow/MindMapFlow';
 import NodeTextModal from '../../components/NodeTextModal/NodeTextModal';
 import { getMindMap, updateMindMap } from '../../lib/mindmapService';
+import { onAuthStateChange } from '../../lib/auth';
+import { User } from 'firebase/auth';
+import LoginPrompt from '../../components/LoginPrompt';
 
 const nodeTypes = {
-  customNode: CustomNode,
+  customNode: CustomNode as any,
 };
+
+const edgeTypes = {
+  floating: FloatingEdge,
+};
+
 
 const MindMapFlowInternal = () => {
   const dispatch: AppDispatch = useDispatch();
-  const { nodes, edges } = useSelector((state: RootState) => state.mindmap);
+  const mindmapState = useSelector((state: RootState) => state.mindmap);
+  const { 
+    nodes: originalNodes, 
+    edges: originalEdges, 
+    visibleGenerations, 
+    highlightedGeneration 
+  } = mindmapState;
+  
+  // 世代フィルタリングされたノード
+  const filteredNodes = originalNodes.filter(node => {
+    const nodeGeneration = node.data?.generation;
+    // 世代情報がない場合は常に表示
+    if (typeof nodeGeneration !== 'number') return true;
+    // visibleGenerationsが空の場合は全て表示
+    if (!visibleGenerations || visibleGenerations.length === 0) return true;
+    // 表示対象の世代かチェック
+    return visibleGenerations.includes(nodeGeneration);
+  });
+
+  // フィルタされたノードIDのセット
+  const visibleNodeIds = new Set(filteredNodes.map(node => node.id));
+
+  // 表示されているノード間のエッジのみを抽出
+  const filteredEdges = originalEdges.filter(edge => 
+    visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
+  );
+
+  // ハイライト機能付きノード（スタイル調整）
+  const nodes = filteredNodes.map(node => {
+    const nodeGeneration = node.data?.generation;
+    const isHighlighted = highlightedGeneration !== null && nodeGeneration === highlightedGeneration;
+    
+    // ハイライト時のスタイル調整
+    if (isHighlighted) {
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          boxShadow: '0 0 20px rgba(255, 215, 0, 0.8)',
+          transform: 'scale(1.1)',
+          zIndex: 1000,
+        }
+      };
+    }
+    
+    // 非ハイライト時（他の世代がハイライトされている場合）
+    if (highlightedGeneration !== null && nodeGeneration !== highlightedGeneration) {
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          opacity: 0.3,
+        }
+      };
+    }
+    
+    return node;
+  });
+  
+  // エッジにfloatingタイプを適用
+  const edges = filteredEdges.map(edge => ({
+    ...edge,
+    type: edge.type || 'floating',
+  }));
+
+  // デバッグログを削除してパフォーマンスを改善
   const [contextMenu, setContextMenu] = useState<{ top: number; left: number; nodeId: string } | null>(null);
   const [showNodeTextModal, setShowNodeTextModal] = useState(false);
   const [pendingNodeData, setPendingNodeData] = useState<{ targetNodeId: string; position: { x: number; y: number } } | null>(null);
   const { fitView } = useReactFlow();
+
+  // 最も近いハンドルを計算する関数
+  const getClosestHandle = (sourceNode: Node, targetNode: Node) => {
+    // ノードの実際のサイズを取得（デフォルト値を使用）
+    const sourceWidth = sourceNode.width || (sourceNode as any).computed?.width || 150;
+    const sourceHeight = sourceNode.height || (sourceNode as any).computed?.height || 40;
+    const targetWidth = targetNode.width || (targetNode as any).computed?.width || 150;
+    const targetHeight = targetNode.height || (targetNode as any).computed?.height || 40;
+
+    // 各ハンドル位置を計算（実測値を優先）
+    const getHandlePositions = (node: Node, width: number, height: number) => {
+      // ノードの絶対位置を取得（Reactフローが計算した位置を使用）
+      const nodeX = (node as any)?.internals?.positionAbsolute?.x || node.position.x;
+      const nodeY = (node as any)?.internals?.positionAbsolute?.y || node.position.y;
+      
+      return {
+        top: { x: nodeX + width / 2, y: nodeY },
+        bottom: { x: nodeX + width / 2, y: nodeY + height },
+        left: { x: nodeX, y: nodeY + height / 2 },
+        right: { x: nodeX + width, y: nodeY + height / 2 }
+      };
+    };
+
+    const sourceHandles = getHandlePositions(sourceNode, sourceWidth, sourceHeight);
+    const targetHandles = getHandlePositions(targetNode, targetWidth, targetHeight);
+
+    // 全てのハンドル組み合わせの距離を計算
+    let minDistance = Infinity;
+    let bestCombination = { sourceHandle: 'right', targetHandle: 'left' };
+
+    Object.entries(sourceHandles).forEach(([sourceHandleId, sourcePos]) => {
+      Object.entries(targetHandles).forEach(([targetHandleId, targetPos]) => {
+        const distance = Math.sqrt(
+          Math.pow(targetPos.x - sourcePos.x, 2) + 
+          Math.pow(targetPos.y - sourcePos.y, 2)
+        );
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          bestCombination = { 
+            sourceHandle: sourceHandleId, 
+            targetHandle: targetHandleId 
+          };
+        }
+      });
+    });
+
+    
+    return bestCombination;
+  };
+
+  // エッジのハンドルを更新する関数
+  const updateEdgeHandles = useCallback(() => {
+    // 最も近いハンドルを計算する関数をここで定義
+    const getClosestHandleLocal = (sourceNode: Node, targetNode: Node) => {
+      const sourceWidth = sourceNode.width || (sourceNode as any).computed?.width || 150;
+      const sourceHeight = sourceNode.height || (sourceNode as any).computed?.height || 40;
+      const targetWidth = targetNode.width || (targetNode as any).computed?.width || 150;
+      const targetHeight = targetNode.height || (targetNode as any).computed?.height || 40;
+
+      const getHandlePositions = (node: Node, width: number, height: number) => {
+        // ノードの絶対位置を取得（Reactフローが計算した位置を使用）
+        const nodeX = (node as any)?.internals?.positionAbsolute?.x || node.position.x;
+        const nodeY = (node as any)?.internals?.positionAbsolute?.y || node.position.y;
+        
+        return {
+          top: { x: nodeX + width / 2, y: nodeY },
+          bottom: { x: nodeX + width / 2, y: nodeY + height },
+          left: { x: nodeX, y: nodeY + height / 2 },
+          right: { x: nodeX + width, y: nodeY + height / 2 }
+        };
+      };
+
+      const sourceHandles = getHandlePositions(sourceNode, sourceWidth, sourceHeight);
+      const targetHandles = getHandlePositions(targetNode, targetWidth, targetHeight);
+
+      let minDistance = Infinity;
+      let bestCombination = { sourceHandle: 'right', targetHandle: 'left' };
+      
+      Object.entries(sourceHandles).forEach(([sourceHandleId, sourcePos]) => {
+        Object.entries(targetHandles).forEach(([targetHandleId, targetPos]) => {
+          const distance = Math.sqrt(
+            Math.pow(targetPos.x - sourcePos.x, 2) + 
+            Math.pow(targetPos.y - sourcePos.y, 2)
+          );
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            bestCombination = { 
+              sourceHandle: sourceHandleId, 
+              targetHandle: targetHandleId 
+            };
+          }
+        });
+      });
+      return bestCombination;
+    };
+
+    const updatedEdges = originalEdges.map(edge => {
+      const sourceNode = nodes.find(node => node.id === edge.source);
+      const targetNode = nodes.find(node => node.id === edge.target);
+      
+      if (sourceNode && targetNode) {
+        const { sourceHandle, targetHandle } = getClosestHandleLocal(sourceNode, targetNode);
+        
+        const changed = edge.sourceHandle !== sourceHandle || edge.targetHandle !== targetHandle;
+        if (changed) {
+        }
+        
+        return {
+          ...edge,
+          type: edge.type || 'floating',
+          sourceHandle,
+          targetHandle,
+        };
+      }
+      return {
+        ...edge,
+        type: edge.type || 'floating',
+      };
+    });
+    
+    // Redux状態を更新
+    setTimeout(() => {
+      dispatch(setEdges(updatedEdges));
+    }, 10);
+  }, [nodes, originalEdges, dispatch]);
+
+  // 既存エッジのハンドル最適化を実行（ノード移動時のみ）
+  useEffect(() => {
+    
+    // 初期読み込み時や自動生成時のみ実行（無限ループ防止）
+    if (nodes.length > 0 && originalEdges.length > 0) {
+      
+      // エッジの最適化が必要かどうかをチェック
+      let needsOptimization = false;
+      
+      for (const edge of originalEdges) {
+        const sourceNode = nodes.find(n => n.id === edge.source);
+        const targetNode = nodes.find(n => n.id === edge.target);
+        
+        if (sourceNode && targetNode) {
+          // 現在のハンドルが最適かどうかを確認
+          const { sourceHandle: optimalSource, targetHandle: optimalTarget } = getClosestHandle(sourceNode, targetNode);
+          
+          if (edge.sourceHandle !== optimalSource || edge.targetHandle !== optimalTarget) {
+            needsOptimization = true;
+            break;
+          }
+        }
+      }
+      
+      if (needsOptimization) {
+        updateEdgeHandles();
+      }
+    }
+  }, [nodes.length, originalEdges.length]); // updateEdgeHandlesを依存関係から除去
+  
+  // デバッグログを削除してパフォーマンスを改善
 
   // ノードが変更された時にfitViewを実行（初期ノード作成時用）
   useEffect(() => {
@@ -54,61 +288,18 @@ const MindMapFlowInternal = () => {
           maxZoom: 1.5
         });
       }, 100);
+    } else if (nodes.length > 1 && edges.length > 0) {
+      // AI自動生成や複数ノードがある場合は全体を表示
+      setTimeout(() => {
+        fitView({ 
+          duration: 800,
+          padding: 0.15,
+          minZoom: 0.1,
+          maxZoom: 1.5
+        });
+      }, 200);
     }
   }, [nodes, edges, fitView]);
-
-  // 最も近いハンドルを計算する関数
-  const getClosestHandle = (sourceNode: Node, targetNode: Node) => {
-    const sourcePos = sourceNode.position;
-    const targetPos = targetNode.position;
-    
-    const dx = targetPos.x - sourcePos.x;
-    const dy = targetPos.y - sourcePos.y;
-    
-    let sourceHandle, targetHandle;
-    
-    if (Math.abs(dx) > Math.abs(dy)) {
-      // 水平方向の距離が大きい場合
-      if (dx > 0) {
-        sourceHandle = 'right';
-        targetHandle = 'left';
-      } else {
-        sourceHandle = 'left';
-        targetHandle = 'right';
-      }
-    } else {
-      // 垂直方向の距離が大きい場合
-      if (dy > 0) {
-        sourceHandle = 'bottom';
-        targetHandle = 'top';
-      } else {
-        sourceHandle = 'top';
-        targetHandle = 'bottom';
-      }
-    }
-    
-    return { sourceHandle, targetHandle };
-  };
-
-  // エッジのハンドルを更新する関数
-  const updateEdgeHandles = useCallback(() => {
-    const updatedEdges = edges.map(edge => {
-      const sourceNode = nodes.find(node => node.id === edge.source);
-      const targetNode = nodes.find(node => node.id === edge.target);
-      
-      if (sourceNode && targetNode) {
-        const { sourceHandle, targetHandle } = getClosestHandle(sourceNode, targetNode);
-        return {
-          ...edge,
-          sourceHandle,
-          targetHandle,
-        };
-      }
-      return edge;
-    });
-    
-    dispatch(setEdges(updatedEdges));
-  }, [nodes, edges, dispatch]);
 
   // 既存ノードとの重複をチェックする関数
   const isPositionOccupied = (x: number, y: number, threshold: number = 100) => {
@@ -143,11 +334,13 @@ const MindMapFlowInternal = () => {
       const newNodes = applyNodeChanges(changes, mutableNodes);
       dispatch(setNodes(newNodes));
       
-      // ノードが移動した場合、エッジのハンドルを更新
-      const hasPositionChange = changes.some(change => change.type === 'position');
-      if (hasPositionChange) {
-        // 次のレンダリングサイクルでエッジを更新
-        setTimeout(() => updateEdgeHandles(), 0);
+      // ドラッグ終了時のみエッジのハンドルを更新
+      const hasPositionChangeComplete = changes.some(change => 
+        change.type === 'position' && change.dragging === false
+      );
+      if (hasPositionChangeComplete) {
+        // ドラッグ完了時のみエッジを再計算（パフォーマンス改善）
+        setTimeout(() => updateEdgeHandles(), 50);
       }
     },
     [dispatch, nodes, updateEdgeHandles]
@@ -163,25 +356,44 @@ const MindMapFlowInternal = () => {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      // 接続時に最適なハンドルを自動選択
+      // 接続されるノードを取得
       const sourceNode = nodes.find(node => node.id === connection.source);
       const targetNode = nodes.find(node => node.id === connection.target);
       
+      let finalConnection = { ...connection };
+      
       if (sourceNode && targetNode) {
+        // 最適なハンドルを自動選択
         const { sourceHandle, targetHandle } = getClosestHandle(sourceNode, targetNode);
-        const optimizedConnection = {
+        finalConnection = {
           ...connection,
           sourceHandle,
           targetHandle,
         };
-        const newEdge = addEdge(optimizedConnection, edges);
-        dispatch(setEdges(newEdge));
       } else {
-        const newEdge = addEdge(connection, edges);
-        dispatch(setEdges(newEdge));
+        // フォールバック: ユーザーが指定したハンドルを正規化
+        const normalizeHandleId = (handleId: string | null | undefined) => {
+          if (!handleId) return 'right';
+          const validHandleIds = ['top', 'bottom', 'left', 'right'];
+          const cleanId = handleId.replace(/^(source-|target-)/, '');
+          return validHandleIds.includes(cleanId) ? cleanId : 'right';
+        };
+        
+        finalConnection = {
+          ...connection,
+          sourceHandle: normalizeHandleId(connection.sourceHandle),
+          targetHandle: normalizeHandleId(connection.targetHandle),
+        };
       }
+
+      const newEdge = addEdge({
+        ...finalConnection,
+        type: 'floating',
+      }, edges);
+      
+      dispatch(setEdges(newEdge));
     },
-    [dispatch, edges, nodes]
+    [dispatch, edges, nodes, getClosestHandle]
   );
 
 
@@ -233,6 +445,7 @@ const MindMapFlowInternal = () => {
       id: `e${pendingNodeData.targetNodeId}-${newNode.id}`,
       source: pendingNodeData.targetNodeId,
       target: newNode.id,
+      type: 'floating',
       sourceHandle,
       targetHandle,
     };
@@ -263,6 +476,25 @@ const MindMapFlowInternal = () => {
     setContextMenu(null);
   };
 
+  // ReactFlowに渡すprops
+  const reactFlowProps = {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    onNodeContextMenu,
+    onPaneClick,
+    nodeTypes,
+    edgeTypes,
+    connectionLineComponent: CustomConnectionLine,
+    defaultViewport: { x: 0, y: 0, zoom: 1.5 },
+    minZoom: 0.05,
+    maxZoom: 3,
+  };
+
+  // デバッグログを削除してパフォーマンスを改善
+
   return (
     <>
       <ReactFlow
@@ -274,6 +506,11 @@ const MindMapFlowInternal = () => {
         onNodeContextMenu={onNodeContextMenu}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        connectionLineComponent={CustomConnectionLine}
+        connectOnClick={false}
+        connectionMode={'loose' as any}
+        connectionRadius={20}
         defaultViewport={{ x: 0, y: 0, zoom: 1.5 }}
         minZoom={0.05}
         maxZoom={3}
@@ -306,6 +543,8 @@ const MindMapPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const dispatch: AppDispatch = useDispatch();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -323,27 +562,45 @@ const MindMapPage = () => {
     }
   };
 
+  // 認証状態の監視
+  useEffect(() => {
+    const unsubscribe = onAuthStateChange((user) => {
+      setUser(user);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
   // URLパラメータから編集モードを検出し、既存データを読み込み
   useEffect(() => {
     const id = searchParams.get('id');
     const title = searchParams.get('title');
     const firstWord = searchParams.get('firstWord');
+    const autoGenerate = searchParams.get('autoGenerate');
     
     if (id) {
       // 編集モード
       setEditingId(id);
       loadExistingMindMap(id);
     } else {
-      // 新規作成の場合は状態をリセット
+      // 新規作成の場合
       setEditingId(null);
-      dispatch(createNewMindMap());
       
-      // タイトルが指定されている場合は設定
-      if (title) {
-        dispatch(setCurrentMindMapTitle(decodeURIComponent(title)));
+      // 自動生成モードの場合（データは既にReduxストアにセット済み）
+      if (autoGenerate === 'true') {
+        // 自動生成の場合は状態をリセットしない（データは既にセット済み）
+      }
+      // 手動作成モードの場合は状態をリセット
+      else {
+        dispatch(createNewMindMap());
+        
+        // タイトルが指定されている場合は設定
+        if (title) {
+          dispatch(setCurrentMindMapTitle(decodeURIComponent(title)));
+        }
       }
       
-      // 最初のワードが指定されている場合は初期ノードを作成
+      // 最初のワードが指定されている場合は初期ノードを作成（手動入力モード）
       if (firstWord) {
         const initialNode = {
           id: '1',
@@ -353,7 +610,6 @@ const MindMapPage = () => {
         };
         dispatch(setNodes([initialNode]));
         dispatch(setEdges([]));
-        
       }
     }
     setInitialized(true);
@@ -369,6 +625,12 @@ const MindMapPage = () => {
   }
 
   const handleSave = async () => {
+    // 認証チェック
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
     if (editingId) {
       // 編集モード: 上書き保存
       try {
@@ -378,19 +640,43 @@ const MindMapPage = () => {
           edges,
         });
         alert('マインドマップが更新されました');
-      } catch (error) {
+      } catch (error: any) {
         console.error('マインドマップの更新エラー:', error);
-        alert('保存中にエラーが発生しました');
+        if (error.message === 'AUTHENTICATION_REQUIRED') {
+          setShowLoginPrompt(true);
+        } else {
+          alert('保存中にエラーが発生しました');
+        }
       }
     } else {
       // 新規作成モード: 新規保存
-      dispatch(saveCurrentMindMap());
+      try {
+        await dispatch(saveCurrentMindMap()).unwrap();
+        alert('マインドマップが保存されました');
+      } catch (error: any) {
+        console.error('マインドマップの保存エラー:', error);
+        if (error.message === 'AUTHENTICATION_REQUIRED') {
+          setShowLoginPrompt(true);
+        } else {
+          alert('保存中にエラーが発生しました');
+        }
+      }
     }
+  };
+
+  const handleLoginSuccess = (loggedInUser: User) => {
+    setUser(loggedInUser);
+    setShowLoginPrompt(false);
+    // ログイン後に再度保存を試行
+    setTimeout(() => {
+      handleSave();
+    }, 100);
   };
 
   const handleGoHome = () => {
     router.push('/');
   };
+
 
   return (
     <div style={{ height: '100vh', width: '100%' }}>
@@ -440,6 +726,13 @@ const MindMapPage = () => {
       </div>
       
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      
+      <LoginPrompt 
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        onLoginSuccess={handleLoginSuccess}
+        message="マインドマップを保存するにはログインが必要です。"
+      />
     </div>
   );
 };

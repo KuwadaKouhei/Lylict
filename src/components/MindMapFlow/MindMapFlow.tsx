@@ -6,6 +6,7 @@ import { addNode } from '../../lib/features/mindmap/mindmapSlice';
 import { Node } from '@xyflow/react';
 import FloatingAddButton from '../FloatingAddButton/FloatingAddButton';
 import ZoomControls from '../ZoomControls/ZoomControls';
+import GenerationControls from '../GenerationControls/GenerationControls';
 
 const MindMapFlow: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -142,7 +143,6 @@ const MindMapFlow: React.FC = () => {
       }
       
       // 最終的には強制的に配置（スペーシングを無視）
-      console.warn('Could not find available position, placing at center with reduced spacing');
       for (let i = 0; i < 20; i++) {
         const x = centerX + (Math.random() - 0.5) * (viewWidth * 0.8);
         const y = centerY + (Math.random() - 0.5) * (viewHeight * 0.8);
@@ -171,6 +171,7 @@ const MindMapFlow: React.FC = () => {
     <>
       <FloatingAddButton onClick={handleAddNode} />
       <ZoomControls />
+      <GenerationControls />
     </>
   );
 };

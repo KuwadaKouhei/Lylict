@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReactFlow接続テスト</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@xyflow/react@12/dist/umd/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@xyflow/react@12/dist/style.css">
+    <style>
+        .reactflow-wrapper {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* テスト用のハンドルスタイル */
+        .react-flow .react-flow__handle {
+            width: 20px !important;
+            height: 20px !important;
+            background: red !important;
+            border: 3px solid yellow !important;
+            border-radius: 50% !important;
+            cursor: pointer !important;
+            z-index: 999 !important;
+        }
+        
+        .react-flow .react-flow__handle:hover {
+            background: darkred !important;
+            transform: scale(1.2) !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script>
+        const { ReactFlow, addEdge, Handle, Position } = ReactFlowLib;
+        const { useState, useCallback } = React;
+        
+        // シンプルなカスタムノード
+        function CustomNode({ data }) {
+            return React.createElement('div', {
+                style: {
+                    padding: '10px',
+                    border: '1px solid #ccc',
+                    borderRadius: '5px',
+                    background: 'white',
+                    position: 'relative'
+                }
+            }, [
+                React.createElement(Handle, {
+                    key: 'target-top',
+                    type: 'target',
+                    position: Position.Top
+                }),
+                React.createElement(Handle, {
+                    key: 'source-top', 
+                    type: 'source',
+                    position: Position.Top
+                }),
+                React.createElement(Handle, {
+                    key: 'target-right',
+                    type: 'target',
+                    position: Position.Right
+                }),
+                React.createElement(Handle, {
+                    key: 'source-right',
+                    type: 'source', 
+                    position: Position.Right
+                }),
+                React.createElement(Handle, {
+                    key: 'target-bottom',
+                    type: 'target',
+                    position: Position.Bottom
+                }),
+                React.createElement(Handle, {
+                    key: 'source-bottom',
+                    type: 'source',
+                    position: Position.Bottom
+                }),
+                React.createElement(Handle, {
+                    key: 'target-left',
+                    type: 'target',
+                    position: Position.Left
+                }),
+                React.createElement(Handle, {
+                    key: 'source-left',
+                    type: 'source',
+                    position: Position.Left
+                }),
+                data.label
+            ]);
+        }
+
+        const nodeTypes = {
+            customNode: CustomNode
+        };
+
+        const initialNodes = [
+            { id: '1', position: { x: 100, y: 100 }, data: { label: 'ノード1' }, type: 'customNode' },
+            { id: '2', position: { x: 400, y: 100 }, data: { label: 'ノード2' }, type: 'customNode' }
+        ];
+
+        const initialEdges = [];
+
+        function Flow() {
+            const [nodes, setNodes] = useState(initialNodes);
+            const [edges, setEdges] = useState(initialEdges);
+
+            const onConnect = useCallback((params) => {
+                console.log('🔗 接続テスト:', params);
+                setEdges((eds) => addEdge(params, eds));
+            }, []);
+
+            return React.createElement('div', { className: 'reactflow-wrapper' },
+                React.createElement(ReactFlow, {
+                    nodes: nodes,
+                    edges: edges,
+                    onConnect: onConnect,
+                    nodeTypes: nodeTypes
+                })
+            );
+        }
+
+        ReactDOM.render(React.createElement(Flow), document.getElementById('root'));
+    </script>
+</body>
+</html>

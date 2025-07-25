@@ -6,7 +6,9 @@
   /* Custom Variables */
   --xy-theme-selected: #7df5af;
   --xy-theme-hover: #464cff;
-  --xy-theme-edge-hover: black;
+  --xy-theme-edge-hover: #3b82f6;
+  --xy-theme-edge-default: #6366f1;
+  --xy-theme-edge-stroke-width: 2;
   --xy-theme-color-focus: #9ea1ff;
 
   /* Built-in Variables see https://reactflow.dev/learn/customization/theming */
@@ -78,9 +80,27 @@
   border-color: #9e86ed;
 }
  
+.react-flow__edge .react-flow__edge-path {
+  stroke: var(--xy-theme-edge-default) !important;
+  stroke-width: var(--xy-theme-edge-stroke-width) !important;
+}
+
 .react-flow__edge.selectable:hover .react-flow__edge-path,
 .react-flow__edge.selectable.selected .react-flow__edge-path {
-  stroke: var(--xy-theme-edge-hover);
+  stroke: var(--xy-theme-edge-hover) !important;
+  stroke-width: 3 !important;
+}
+
+/* 追加: より具体的なセレクタ */
+.react-flow .react-flow__edge path {
+  stroke: #6366f1 !important;
+  stroke-width: 2 !important;
+}
+
+.react-flow .react-flow__edge:hover path,
+.react-flow .react-flow__edge.selected path {
+  stroke: #3b82f6 !important;
+  stroke-width: 3 !important;
 }
  
 .react-flow__handle {
