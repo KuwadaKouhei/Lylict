@@ -228,13 +228,11 @@ export default function TitleInputModal({
                   className={styles.select}
                   disabled={isGenerating}
                 >
-                  <option value={1}>1世代（キーワードのみ）</option>
                   <option value={2}>2世代（キーワード + 連想語）</option>
                   <option value={3}>3世代（階層的な連想）</option>
-                  <option value={4}>4世代（深い連想）</option>
                 </select>
                 <p className={styles.hint}>
-                  世代数が多いほど詳細な連想マップになります。世代数3の場合、第1世代（キーワード）→第2世代（8つの連想語）→第3世代（各3つの連想語）が生成されます
+                  世代数が多いほど詳細な連想マップになります。世代数3の場合、第1世代（キーワード）→第2世代（6つの連想語）→第3世代（各3つの連想語）が生成されます
                 </p>
               </div>
               

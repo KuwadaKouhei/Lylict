@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signInWithGoogle, logout } from '@/lib/auth';
+import { useState, useEffect } from 'react';
+import { signInWithGoogle, logout, handleRedirectResult } from '@/lib/auth';
 import { User } from 'firebase/auth';
 import styles from './LoginButton.module.css';
 
@@ -13,14 +13,32 @@ interface LoginButtonProps {
 export default function LoginButton({ user, onUserChange }: LoginButtonProps) {
   const [loading, setLoading] = useState(false);
 
+  // リダイレクト認証の結果をチェック
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const user = await handleRedirectResult();
+        if (user) {
+          onUserChange(user);
+        }
+      } catch (error) {
+        console.error('Redirect result error:', error);
+      }
+    };
+
+    // コンポーネントがマウントされた時にリダイレクト結果をチェック
+    checkRedirectResult();
+  }, [onUserChange]);
+
   const handleLogin = async () => {
     setLoading(true);
     try {
       const user = await signInWithGoogle();
       onUserChange(user);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed:', error);
-      alert('ログインに失敗しました。再度お試しください。');
+      const errorMessage = error.message || 'ログインに失敗しました。再度お試しください。';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -84,13 +84,14 @@ export const updateMindMap = async (id: string, mindmap: Omit<MindMap, 'id' | 'c
 export const getAllMindMaps = async (): Promise<MindMap[]> => {
   try {
     const userId = requireAuth();
+    
+    // インデックスエラーの回避策：orderByを削除して、クライアント側でソート
     const q = query(
       collection(db, COLLECTION_NAME), 
-      where('userId', '==', userId),
-      orderBy('updatedAt', 'desc')
+      where('userId', '==', userId)
     );
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => {
+    const mindmaps = querySnapshot.docs.map(doc => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -99,6 +100,9 @@ export const getAllMindMaps = async (): Promise<MindMap[]> => {
         updatedAt: data.updatedAt?.toDate() || new Date(),
       };
     }) as MindMap[];
+    
+    // クライアント側でupdatedAtの降順ソート
+    return mindmaps.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   } catch (error) {
     console.error('Error getting mindmaps:', error);
     throw error;

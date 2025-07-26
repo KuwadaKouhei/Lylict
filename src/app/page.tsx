@@ -100,6 +100,8 @@ export default function Home() {
   };
 
   const handleAutoGenerate = async (title: string, keyword: string, mode: 'noun' | 'poetic', generations: number = 2) => {
+    console.log('🚀 Starting handleAutoGenerate with:', { title, keyword, mode, generations });
+    
     setShowTitleModal(false);
     setIsGenerating(true);
     setGenerationProgress('マインドマップの自動生成を開始しています...');
@@ -114,36 +116,200 @@ export default function Home() {
         children?: GenerationNode[];
       }
 
-      // APIから連想語を取得する関数
-      const fetchAssociations = async (word: string, count: number) => {
-        const response = await fetch('http://localhost:5001/associate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            word: word,
-            topn: count
-          }),
-        });
+      // 世代別連想語APIを使用する関数
+      const fetchGenerationalAssociations = async (keyword: string, generation: number) => {
+        console.log(`🔍 Fetching generational associations for keyword: "${keyword}" (generation: ${generation})`);
+        
+        try {
+          const response = await fetch('http://localhost:5001/associate-generations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              key: keyword,
+              generation: generation
+            }),
+          });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`APIエラー (${response.status}): ${errorText}`);
+          console.log(`📡 API Response status: ${response.status} ${response.statusText}`);
+
+          const data = await response.json();
+          console.log('📦 Raw generational API data:', data);
+
+          // APIサーバーがエラーレスポンスを返した場合
+          if (data.error) {
+            throw new Error(`API内部エラー: ${data.message || data.error}`);
+          }
+
+          if (!response.ok) {
+            throw new Error(`APIエラー (${response.status}): ${response.statusText}`);
+          }
+
+          return data;
+        } catch (fetchError) {
+          console.error(`❌ Error in fetchGenerationalAssociations for keyword "${keyword}":`, fetchError);
+          throw fetchError;
+        }
+      };
+
+      // 従来のAPIから連想語を取得する関数（フォールバック用）
+      const fetchAssociations = async (word: string, count: number) => {
+        console.log(`🔍 Fetching associations for word: "${word}" (count: ${count})`);
+        
+        try {
+          const response = await fetch('http://localhost:5001/associate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              word: word,
+              topn: count
+            }),
+          });
+
+          console.log(`📡 API Response status: ${response.status} ${response.statusText}`);
+
+          const data = await response.json();
+          console.log('📦 Raw API data:', data);
+        
+        // APIサーバーがエラーレスポンスを返した場合
+        if (data.error) {
+          throw new Error(`API内部エラー: ${data.message || data.error}`);
         }
 
-        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(`APIエラー (${response.status}): ${response.statusText}`);
+        }
+
         console.log('🔗 API Response:', {
           word: word,
           topn: count,
-          similar_words: data.similar_words || data || []
+          associated_words: data.associated_words || data.similar_words || data || []
         });
-        // レスポンスが配列の場合と、similar_wordsプロパティを持つ場合の両方に対応
-        return Array.isArray(data) ? data : (data.similar_words || data.words || []);
+        
+        // レスポンスが配列の場合と、associated_wordsプロパティを持つ場合の両方に対応
+        let rawResult = Array.isArray(data) ? data : (data.associated_words || data.similar_words || data.words || []);
+        
+        // 空の結果の場合のフォールバック
+        if (!rawResult || rawResult.length === 0) {
+          console.warn(`⚠️ 単語「${word}」の連想語が見つかりませんでした`);
+          return [];
+        }
+        
+        // オブジェクト形式の場合（{word: "単語", similarity: 0.5}）を文字列に変換
+        const result = rawResult.map((item: any) => {
+          if (typeof item === 'string') {
+            return item;
+          } else if (typeof item === 'object' && item !== null) {
+            return item.word || item.text || String(item);
+          }
+          return String(item);
+        });
+        
+        console.log(`✅ Processed ${result.length} associations for "${word}":`, result);
+        
+        return result;
+        } catch (fetchError) {
+          console.error(`❌ Error in fetchAssociations for word "${word}":`, fetchError);
+          throw fetchError;
+        }
       };
 
-      // 階層構造を構築
-      const buildGenerationTree = async (): Promise<GenerationNode[]> => {
+      // 世代別APIを使用した階層構造構築
+      const buildGenerationTreeWithAPI = async (): Promise<GenerationNode[]> => {
+        console.log('🌳 Building generation tree with generational API...');
+        let nodeCounter = 1;
+        const allNodes: GenerationNode[] = [];
+
+        // 第1世代（キーワード）
+        const rootNode: GenerationNode = {
+          word: keyword,
+          id: nodeCounter.toString(),
+          generation: 1,
+          children: []
+        };
+        allNodes.push(rootNode);
+        nodeCounter++;
+
+        try {
+          // 世代別APIを呼び出し
+          const apiResponse = await fetchGenerationalAssociations(keyword, generations);
+          
+          if (generations === 2) {
+            // 世代数2の場合
+            setGenerationProgress('第2世代の連想語を処理中...');
+            
+            if (apiResponse.words && apiResponse.words.length > 0) {
+              apiResponse.words.forEach((wordObj: any) => {
+                const childNode: GenerationNode = {
+                  word: wordObj.word,
+                  id: nodeCounter.toString(),
+                  generation: 2,
+                  parentId: rootNode.id,
+                  children: []
+                };
+                allNodes.push(childNode);
+                nodeCounter++;
+              });
+            }
+          } else if (generations === 3) {
+            // 世代数3の場合
+            setGenerationProgress('第2世代の連想語を処理中...');
+            
+            if (apiResponse.first_level && apiResponse.first_level.length > 0) {
+              // 第2世代のノードを作成
+              const secondGenNodes: GenerationNode[] = [];
+              apiResponse.first_level.forEach((wordObj: any) => {
+                const childNode: GenerationNode = {
+                  word: wordObj.word,
+                  id: nodeCounter.toString(),
+                  generation: 2,
+                  parentId: rootNode.id,
+                  children: []
+                };
+                allNodes.push(childNode);
+                secondGenNodes.push(childNode);
+                nodeCounter++;
+              });
+
+              // 第3世代のノードを作成
+              setGenerationProgress('第3世代の連想語を処理中...');
+              if (apiResponse.second_level) {
+                secondGenNodes.forEach((parentNode) => {
+                  const secondLevelWords = apiResponse.second_level[parentNode.word];
+                  if (secondLevelWords && secondLevelWords.length > 0) {
+                    secondLevelWords.forEach((wordObj: any) => {
+                      const childNode: GenerationNode = {
+                        word: wordObj.word,
+                        id: nodeCounter.toString(),
+                        generation: 3,
+                        parentId: parentNode.id,
+                        children: []
+                      };
+                      allNodes.push(childNode);
+                      nodeCounter++;
+                    });
+                  }
+                });
+              }
+            }
+          }
+
+          console.log(`✅ Generated ${allNodes.length} nodes using generational API`);
+          return allNodes;
+          
+        } catch (error) {
+          console.warn('⚠️ Generational API failed, falling back to traditional method:', error);
+          // フォールバックとして従来の方法を使用
+          return await buildGenerationTreeTraditional();
+        }
+      };
+
+      // 従来の階層構造構築（フォールバック用）
+      const buildGenerationTreeTraditional = async (): Promise<GenerationNode[]> => {
+        console.log('🌳 Building generation tree with traditional method...');
         let nodeCounter = 1;
         const allNodes: GenerationNode[] = [];
 
@@ -178,31 +344,29 @@ export default function Home() {
             nodeCounter++;
           }
 
-          if (generations >= 3) {
-            // 第3世代以降（各連想語からさらに3つずつの連想語）
-            for (let gen = 3; gen <= generations; gen++) {
-              setGenerationProgress(`第${gen}世代の連想語を生成中...`);
-              const previousGenNodes = allNodes.filter(node => node.generation === gen - 1);
-              
-              for (const parentNode of previousGenNodes) {
-                try {
-                  const childWords = await fetchAssociations(parentNode.word, 3);
-                  
-                  for (const word of childWords) {
-                    const childNode: GenerationNode = {
-                      word: word,
-                      id: nodeCounter.toString(),
-                      generation: gen,
-                      parentId: parentNode.id,
-                      children: []
-                    };
-                    allNodes.push(childNode);
-                    parentNode.children!.push(childNode);
-                    nodeCounter++;
-                  }
-                } catch (error) {
-                  // 個別の失敗は無視して続行
+          if (generations === 3) {
+            // 第3世代（各連想語からさらに3つずつの連想語）
+            setGenerationProgress('第3世代の連想語を生成中...');
+            const previousGenNodes = allNodes.filter(node => node.generation === 2);
+            
+            for (const parentNode of previousGenNodes) {
+              try {
+                const childWords = await fetchAssociations(parentNode.word, 3);
+                
+                for (const word of childWords) {
+                  const childNode: GenerationNode = {
+                    word: word,
+                    id: nodeCounter.toString(),
+                    generation: 3,
+                    parentId: parentNode.id,
+                    children: []
+                  };
+                  allNodes.push(childNode);
+                  parentNode.children!.push(childNode);
+                  nodeCounter++;
                 }
+              } catch (error) {
+                // 個別の失敗は無視して続行
               }
             }
           }
@@ -211,7 +375,7 @@ export default function Home() {
         return allNodes;
       };
 
-      const generationNodes = await buildGenerationTree();
+      const generationNodes = await buildGenerationTreeWithAPI();
       
       if (generationNodes.length === 0) {
         throw new Error('連想語が生成されませんでした。キーワードを変更してお試しください。');
@@ -624,8 +788,13 @@ export default function Home() {
       
       // 自動生成フラグ付きでマインドマップ画面に遷移
       router.push('/mindmap?autoGenerate=true');
-    } catch (error) {
-      console.error('自動生成エラー:', error);
+    } catch (error: any) {
+      console.error('❌ 自動生成エラー詳細:', {
+        error,
+        errorType: error?.constructor?.name,
+        errorMessage: error?.message,
+        errorStack: error?.stack
+      });
       setIsGenerating(false);
       setGenerationProgress('');
       
@@ -634,7 +803,11 @@ export default function Home() {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         errorMessage = 'APIサーバーに接続できません。\n\n以下を確認してください:\n1. w2v_associateAPIサーバーが起動しているか\n2. サーバーが http://localhost:5001 で動作しているか\n\n起動方法:\nD:/training/w2v_associateAPI で\n"pip install -r requirements.txt"\n"python app.py"';
       } else if (error instanceof Error) {
-        errorMessage = `エラー: ${error.message}`;
+        if (error.message.includes('API内部エラー')) {
+          errorMessage = `${error.message}\n\nAPIサーバーの設定を確認してください:\n1. Word2Vecモデルが正しく読み込まれているか\n2. 日本語の単語データが利用可能か\n3. サーバーログでエラー詳細を確認`;
+        } else {
+          errorMessage = `エラー: ${error.message}`;
+        }
       }
       
       alert(errorMessage);

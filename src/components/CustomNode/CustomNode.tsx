@@ -25,28 +25,14 @@ const nodeAppear = keyframes`
   }
 `;
 
-// 現代風パルスエフェクト
-const nodePulse = keyframes`
-  0%, 100% {
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4), 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  50% {
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.7), 0 4px 16px rgba(0, 0, 0, 0.2);
-    transform: scale(1.02);
-  }
-`;
 
-const StyledNodeContainer = styled('div')<{ isNew?: boolean; isSelected?: boolean; generation?: number }>(({ theme, isNew, isSelected, generation }) => ({
+const StyledNodeContainer = styled('div')<{ isNew?: boolean; isSelected?: boolean; customColor?: string }>(({ theme, isNew, isSelected, customColor }) => ({
   minWidth: 120,
   maxWidth: 200,
   padding: '12px 16px',
   border: 'none',
   borderRadius: 16,
-  background: generation 
-    ? getGenerationGradient(generation, isSelected || false)
-    : (isSelected 
-      ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
-      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'),
+  background: getNodeGradient(customColor, isSelected || false),
   color: '#fff',
   textAlign: 'center',
   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -83,11 +69,7 @@ const StyledNodeContainer = styled('div')<{ isNew?: boolean; isSelected?: boolea
   }),
   
   '&:hover': {
-    background: generation 
-      ? getGenerationGradient(generation, !isSelected)
-      : (isSelected
-        ? 'linear-gradient(135deg, #ee5a24 0%, #ff6b6b 100%)'
-        : 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'),
+    background: getNodeGradient(customColor, !isSelected),
     boxShadow: isSelected
       ? '0 10px 40px rgba(255, 107, 107, 0.7), 0 5px 20px rgba(0, 0, 0, 0.25)'
       : '0 8px 32px rgba(102, 126, 234, 0.6), 0 4px 16px rgba(0, 0, 0, 0.2)',
@@ -103,59 +85,13 @@ const StyledNodeContainer = styled('div')<{ isNew?: boolean; isSelected?: boolea
   },
 }));
 
-const GenerationBadge = styled('div')<{ generation: number }>(({ generation }) => ({
-  position: 'absolute',
-  top: -8,
-  right: -8,
-  minWidth: 20,
-  height: 20,
-  borderRadius: '50%',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '10px',
-  fontWeight: 'bold',
-  color: '#fff',
-  background: getGenerationColor(generation),
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-  zIndex: 1000,
-}));
 
-// 世代別の色を取得する関数
-const getGenerationColor = (generation: number): string => {
-  const colors = [
-    '#ff6b6b', // 第1世代: 赤
-    '#4ecdc4', // 第2世代: ティール
-    '#45b7d1', // 第3世代: 青
-    '#f7b731', // 第4世代: 黄
-    '#5f27cd', // 第5世代: 紫
-    '#00d2d3', // 第6世代: シアン
-    '#ff9ff3', // 第7世代: ピンク
-    '#54a0ff', // 第8世代: ライトブルー
-  ];
-  return colors[(generation - 1) % colors.length] || '#667eea';
-};
-
-// 世代別のグラデーション背景を取得する関数
-const getGenerationGradient = (generation: number, isSelected: boolean): string => {
-  const gradients = [
-    isSelected 
-      ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)' 
-      : 'linear-gradient(135deg, #ff6b6b 0%, #ff5722 100%)', // 第1世代
-    isSelected 
-      ? 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)' 
-      : 'linear-gradient(135deg, #4ecdc4 0%, #0ba360 100%)', // 第2世代
-    isSelected 
-      ? 'linear-gradient(135deg, #45b7d1 0%, #3742fa 100%)' 
-      : 'linear-gradient(135deg, #45b7d1 0%, #2f3542 100%)', // 第3世代
-    isSelected 
-      ? 'linear-gradient(135deg, #f7b731 0%, #fd9644 100%)' 
-      : 'linear-gradient(135deg, #f7b731 0%, #fc427b 100%)', // 第4世代
-    isSelected 
-      ? 'linear-gradient(135deg, #5f27cd 0%, #341f97 100%)' 
-      : 'linear-gradient(135deg, #5f27cd 0%, #00d2d3 100%)', // 第5世代以降
-  ];
-  return gradients[Math.min(generation - 1, gradients.length - 1)] || gradients[4];
+// ノードの背景色を取得する関数（カスタム色対応）
+const getNodeGradient = (color: string | undefined, isSelected: boolean): string => {
+  const baseColor = color || '#667eea';
+  return isSelected 
+    ? `linear-gradient(135deg, ${baseColor} 0%, #764ba2 100%)` 
+    : `linear-gradient(135deg, ${baseColor} 0%, #764ba2 100%)`;
 };
 
 const CustomNode: React.FC<NodeProps<any>> = ({ data, id, selected }) => {
@@ -178,6 +114,7 @@ const CustomNode: React.FC<NodeProps<any>> = ({ data, id, selected }) => {
   const handleDoubleClick = () => {
     setIsEditing(true);
   };
+
 
   const handleBlur = () => {
     setIsEditing(false);
@@ -211,7 +148,7 @@ const CustomNode: React.FC<NodeProps<any>> = ({ data, id, selected }) => {
       onDoubleClick={handleDoubleClick} 
       isNew={isNew}
       isSelected={selected}
-      generation={data.generation}
+      customColor={data.color}
     >
       <Handle 
         type="target" 
@@ -303,12 +240,6 @@ const CustomNode: React.FC<NodeProps<any>> = ({ data, id, selected }) => {
         }}>{data.label}</div>
       )}
       
-      {/* 世代バッジ表示 */}
-      {data.generation && (
-        <GenerationBadge generation={data.generation}>
-          {data.generation}
-        </GenerationBadge>
-      )}
     </StyledNodeContainer>
   );
 };

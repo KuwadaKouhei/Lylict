@@ -6,7 +6,6 @@ import { addNode } from '../../lib/features/mindmap/mindmapSlice';
 import { Node } from '@xyflow/react';
 import FloatingAddButton from '../FloatingAddButton/FloatingAddButton';
 import ZoomControls from '../ZoomControls/ZoomControls';
-import GenerationControls from '../GenerationControls/GenerationControls';
 
 const MindMapFlow: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -171,7 +170,6 @@ const MindMapFlow: React.FC = () => {
     <>
       <FloatingAddButton onClick={handleAddNode} />
       <ZoomControls />
-      <GenerationControls />
     </>
   );
 };

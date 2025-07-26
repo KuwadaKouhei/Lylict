@@ -18,7 +18,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../lib/store';
-import { setNodes, setEdges, addNode, removeNode, addEdge as mindmapAddEdge, saveCurrentMindMap, setCurrentMindMapTitle, createNewMindMap } from '../../lib/features/mindmap/mindmapSlice';
+import { setNodes, setEdges, addNode, removeNode, addEdge as mindmapAddEdge, saveCurrentMindMap, setCurrentMindMapTitle, createNewMindMap, updateNodeColor } from '../../lib/features/mindmap/mindmapSlice';
 import { Button, IconButton, Typography, Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
@@ -31,7 +31,7 @@ import Sidebar from '../../components/Sidebar/Sidebar';
 import MindMapFlow from '../../components/MindMapFlow/MindMapFlow';
 import NodeTextModal from '../../components/NodeTextModal/NodeTextModal';
 import { getMindMap, updateMindMap } from '../../lib/mindmapService';
-import { onAuthStateChange } from '../../lib/auth';
+import { onAuthStateChange, handleRedirectResult } from '../../lib/auth';
 import { User } from 'firebase/auth';
 import LoginPrompt from '../../components/LoginPrompt';
 
@@ -48,65 +48,12 @@ const MindMapFlowInternal = () => {
   const dispatch: AppDispatch = useDispatch();
   const mindmapState = useSelector((state: RootState) => state.mindmap);
   const { 
-    nodes: originalNodes, 
-    edges: originalEdges, 
-    visibleGenerations, 
-    highlightedGeneration 
+    nodes, 
+    edges: originalEdges
   } = mindmapState;
   
-  // 世代フィルタリングされたノード
-  const filteredNodes = originalNodes.filter(node => {
-    const nodeGeneration = node.data?.generation;
-    // 世代情報がない場合は常に表示
-    if (typeof nodeGeneration !== 'number') return true;
-    // visibleGenerationsが空の場合は全て表示
-    if (!visibleGenerations || visibleGenerations.length === 0) return true;
-    // 表示対象の世代かチェック
-    return visibleGenerations.includes(nodeGeneration);
-  });
-
-  // フィルタされたノードIDのセット
-  const visibleNodeIds = new Set(filteredNodes.map(node => node.id));
-
-  // 表示されているノード間のエッジのみを抽出
-  const filteredEdges = originalEdges.filter(edge => 
-    visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
-  );
-
-  // ハイライト機能付きノード（スタイル調整）
-  const nodes = filteredNodes.map(node => {
-    const nodeGeneration = node.data?.generation;
-    const isHighlighted = highlightedGeneration !== null && nodeGeneration === highlightedGeneration;
-    
-    // ハイライト時のスタイル調整
-    if (isHighlighted) {
-      return {
-        ...node,
-        style: {
-          ...node.style,
-          boxShadow: '0 0 20px rgba(255, 215, 0, 0.8)',
-          transform: 'scale(1.1)',
-          zIndex: 1000,
-        }
-      };
-    }
-    
-    // 非ハイライト時（他の世代がハイライトされている場合）
-    if (highlightedGeneration !== null && nodeGeneration !== highlightedGeneration) {
-      return {
-        ...node,
-        style: {
-          ...node.style,
-          opacity: 0.3,
-        }
-      };
-    }
-    
-    return node;
-  });
-  
   // エッジにfloatingタイプを適用
-  const edges = filteredEdges.map(edge => ({
+  const edges = originalEdges.map(edge => ({
     ...edge,
     type: edge.type || 'floating',
   }));
@@ -476,6 +423,12 @@ const MindMapFlowInternal = () => {
     setContextMenu(null);
   };
 
+  const handleColorSelectFromContextMenu = (color: string) => {
+    if (!contextMenu) return;
+    dispatch(updateNodeColor({ nodeId: contextMenu.nodeId, color }));
+    setContextMenu(null);
+  };
+
   // ReactFlowに渡すprops
   const reactFlowProps = {
     nodes,
@@ -525,6 +478,7 @@ const MindMapFlowInternal = () => {
           left={contextMenu.left}
           onAdd={handleAddFromContextMenu}
           onDelete={handleDeleteFromContextMenu}
+          onColorSelect={handleColorSelectFromContextMenu}
         />
       )}
       
@@ -544,6 +498,7 @@ const MindMapPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const dispatch: AppDispatch = useDispatch();
   const searchParams = useSearchParams();
@@ -562,26 +517,49 @@ const MindMapPage = () => {
     }
   };
 
-  // 認証状態の監視
+  // 認証状態の監視とリダイレクト結果の処理
   useEffect(() => {
     const unsubscribe = onAuthStateChange((user) => {
       setUser(user);
+      setAuthInitialized(true);
     });
+    
+    // リダイレクト認証の結果をチェック
+    const checkRedirectResult = async () => {
+      try {
+        const user = await handleRedirectResult();
+        if (user) {
+          setUser(user);
+          setAuthInitialized(true);
+        }
+      } catch (error) {
+        console.error('Redirect result error:', error);
+        setAuthInitialized(true);
+      }
+    };
+
+    checkRedirectResult();
     
     return () => unsubscribe();
   }, []);
 
   // URLパラメータから編集モードを検出し、既存データを読み込み
   useEffect(() => {
+    // 認証状態の初期化を待つ
+    if (!authInitialized) return;
+    
     const id = searchParams.get('id');
     const title = searchParams.get('title');
     const firstWord = searchParams.get('firstWord');
     const autoGenerate = searchParams.get('autoGenerate');
     
-    if (id) {
-      // 編集モード
+    if (id && user) {
+      // 編集モード（ユーザーがログインしている場合のみ）
       setEditingId(id);
       loadExistingMindMap(id);
+    } else if (id && !user) {
+      // ログインしていない場合は、ホームに戻る
+      router.push('/');
     } else {
       // 新規作成の場合
       setEditingId(null);
@@ -613,7 +591,7 @@ const MindMapPage = () => {
       }
     }
     setInitialized(true);
-  }, [searchParams, dispatch]);
+  }, [searchParams, dispatch, authInitialized, user, router]);
 
   // 初期化が完了していない場合はローディング表示
   if (!initialized) {
