@@ -75,13 +75,13 @@ const mindmapSlice = createSlice({
   initialState,
   reducers: {
     setNodes: (state, action: PayloadAction<Node[]>) => {
-      state.nodes = action.payload;
+      state.nodes = action.payload as any;
     },
     setEdges: (state, action: PayloadAction<Edge[]>) => {
       state.edges = action.payload;
     },
     addNode: (state, action: PayloadAction<Node>) => {
-      state.nodes.push(action.payload);
+      state.nodes.push(action.payload as any);
     },
     addEdge: (state, action: PayloadAction<Edge>) => {
       state.edges.push(action.payload);
@@ -118,7 +118,7 @@ const mindmapSlice = createSlice({
       nodes: Node[];
       edges: Edge[];
     }>) => {
-      state.nodes = action.payload.nodes;
+      state.nodes = action.payload.nodes as any;
       state.edges = action.payload.edges;
       state.currentMindMapId = null;
       state.currentMindMapTitle = action.payload.title;
@@ -136,7 +136,7 @@ const mindmapSlice = createSlice({
       })
       .addCase(fetchAllMindMaps.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.savedMindMaps = action.payload;
+        state.savedMindMaps = action.payload as any;
       })
       .addCase(fetchAllMindMaps.rejected, (state, action) => {
         state.isLoading = false;
@@ -150,7 +150,7 @@ const mindmapSlice = createSlice({
       .addCase(loadMindMap.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload) {
-          state.nodes = action.payload.nodes;
+          state.nodes = action.payload.nodes as any;
           state.edges = action.payload.edges;
           state.currentMindMapId = action.payload.id || null;
           state.currentMindMapTitle = action.payload.title;

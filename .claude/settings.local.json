@@ -8,7 +8,9 @@
       "Bash(firebase:*)",
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(copy:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
