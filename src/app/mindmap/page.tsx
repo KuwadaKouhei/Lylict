@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   ReactFlow,
@@ -715,5 +715,13 @@ const MindMapPage = () => {
   );
 };
 
+// Suspenseで囲んでuseSearchParamsの問題を解決
+const MindMapPageWithSuspense = () => (
+  <Suspense fallback={<div style={{ height: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Typography variant="h6">読み込み中...</Typography>
+  </div>}>
+    <MindMapPage />
+  </Suspense>
+);
 
-export default MindMapPage;
+export default MindMapPageWithSuspense;
