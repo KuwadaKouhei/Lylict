@@ -87,6 +87,7 @@ npm run dev
 
 ## ビルドとデプロイ
 
+### ローカルビルド
 ```bash
 # 本番ビルド
 npm run build
@@ -97,6 +98,23 @@ npm run start
 # Lint実行
 npm run lint
 ```
+
+### Vercelデプロイ
+
+#### 1. GitHubリポジトリと連携
+1. [Vercel](https://vercel.com)にログイン
+2. 「New Project」をクリック
+3. GitHubリポジトリ `KuwadaKouhei/ideaweaver` を選択
+4. 「Import」をクリック
+
+#### 2. 環境変数の設定
+Vercelダッシュボードの「Settings」→「Environment Variables」で以下を設定：
+- すべての `NEXT_PUBLIC_*` 変数を実際の値で設定
+- セキュリティ上の理由により、実际の認証情報はリポジトリには含まれていません
+
+#### 3. デプロイ実行
+- 環境変数設定後、「Deploy」をクリック
+- 初回デプロイ完了後、カスタムドメイン設定可能
 
 ## 連想語API
 
