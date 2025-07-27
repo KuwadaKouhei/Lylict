@@ -101,6 +101,27 @@
   text-align: left;
 }
 
+.apiStatus {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  min-height: 1.2rem;
+}
+
+.apiChecking {
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+.apiConnected {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.apiDisconnected {
+  color: #ef4444;
+  font-weight: 500;
+}
+
 .title {
   font-size: 3rem;
   font-weight: 800;

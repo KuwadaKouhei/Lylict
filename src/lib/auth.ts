@@ -11,7 +11,6 @@ export const signInWithGooglePopup = async (): Promise<User | null> => {
     
     if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
       // ポップアップがブロックされた場合はリダイレクト認証を試行
-      console.log('Popup blocked, falling back to redirect...');
       throw new Error('POPUP_BLOCKED');
     }
     
