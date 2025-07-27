@@ -112,7 +112,14 @@ Vercelダッシュボードの「Settings」→「Environment Variables」で以
 - すべての `NEXT_PUBLIC_*` 変数を実際の値で設定
 - セキュリティ上の理由により、実际の認証情報はリポジトリには含まれていません
 
-#### 3. デプロイ実行
+#### 3. Firebase認証ドメイン設定
+Firebase Consoleで以下を設定：
+1. [Firebase Console](https://console.firebase.google.com) にアクセス
+2. プロジェクト「ideaweaver-app」を選択
+3. 「Authentication」→「Settings」→「Authorized domains」
+4. Vercelドメイン（例：`lylict.vercel.app`）を追加
+
+#### 4. デプロイ実行
 - 環境変数設定後、「Deploy」をクリック
 - 初回デプロイ完了後、カスタムドメイン設定可能
 

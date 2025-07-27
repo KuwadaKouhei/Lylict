@@ -2,17 +2,26 @@
 
 import { autoDiscoverAPIEndpoint } from './awsService';
 
-const PRIMARY_API_URL = process.env.NEXT_PUBLIC_W2V_API_BASE_URL || 'http://57.182.235.147:8080';
+// 本番環境ではHTTPSプロキシを使用
+const PRIMARY_API_URL = process.env.NODE_ENV === 'production' 
+  ? '/api/w2v-proxy'  // Vercel本番環境ではプロキシ経由
+  : process.env.NEXT_PUBLIC_W2V_API_BASE_URL || 'http://localhost:8080/api/v1/associate';
+
 const FALLBACK_API_URL = process.env.NEXT_PUBLIC_W2V_API_LOCAL_URL || 'http://localhost:8080';
 
 // 動的に取得されたAPIのURL（キャッシュ用）
 let dynamicApiUrl: string | null = null;
 
 /**
- * APIエンドポイントの自動選択（AWS ECS動的取得→本番→ローカルの順でフォールバック）
+ * APIエンドポイントの自動選択（本番環境ではプロキシ優先）
  */
 const getAvailableApiUrl = async (): Promise<string> => {
-  // 1. AWS ECSから動的にパブリックIPを取得
+  // 本番環境では常にプロキシを使用
+  if (process.env.NODE_ENV === 'production') {
+    return '/api/w2v-proxy';
+  }
+  
+  // 開発環境のみAWS ECS動的検出を実行
   if (!dynamicApiUrl) {
     try {
       console.log('🔍 AWS ECSからパブリックIP自動検出を開始...');
@@ -53,19 +62,23 @@ const getAvailableApiUrl = async (): Promise<string> => {
   
   // 2. 設定された本番環境を試行
   try {
-    const response = await fetch(`${PRIMARY_API_URL}/api/v1/associate`, {
+    const apiUrl = PRIMARY_API_URL.includes('/api/w2v-proxy') 
+      ? PRIMARY_API_URL  // プロキシの場合はそのまま
+      : `${PRIMARY_API_URL}/api/v1/associate`;  // 直接APIの場合はパスを追加
+      
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ keyword: "テスト", generation: 2 }),
-      signal: AbortSignal.timeout(3000) // 3秒でタイムアウト
+      signal: AbortSignal.timeout(5000) // 5秒でタイムアウト
     });
     
     if (response.ok) {
-      console.log('✅ 本番APIサーバーに接続成功:', PRIMARY_API_URL);
+      console.log('✅ APIサーバーに接続成功:', apiUrl);
       return PRIMARY_API_URL;
     }
   } catch {
-    console.warn('⚠️ 本番APIサーバーに接続できません:', PRIMARY_API_URL);
+    console.warn('⚠️ APIサーバーに接続できません:', PRIMARY_API_URL);
   }
   
   // 3. 本番がダメならローカル環境を試行
@@ -136,11 +149,16 @@ export interface HealthResponse {
  * APIサーバーのヘルスチェック
  */
 export const checkApiHealth = async (): Promise<HealthResponse> => {
-  const apiUrl = await getAvailableApiUrl();
+  const baseUrl = await getAvailableApiUrl();
   
   try {
+    // プロキシかどうかで呼び出し方法を分ける
+    const apiUrl = baseUrl.includes('/api/w2v-proxy') 
+      ? baseUrl  // プロキシの場合はそのまま
+      : `${baseUrl}/api/v1/associate`;  // 直接APIの場合はパスを追加
+      
     // ヘルスチェックエンドポイントが無いため、実際のAPIを軽量テスト
-    const response = await fetch(`${apiUrl}/api/v1/associate`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -179,7 +197,7 @@ export const fetchGenerationalAssociations = async (
   generation: number,
   max_results: number = 10
 ): Promise<GenerationalResponse> => {
-  const apiUrl = await getAvailableApiUrl();
+  const baseUrl = await getAvailableApiUrl();
   
   try {
     // まずヘルスチェックを実行
@@ -189,7 +207,12 @@ export const fetchGenerationalAssociations = async (
         `詳細: ${PRIMARY_API_URL} または ${FALLBACK_API_URL} に接続できません。APIサーバーが起動しているか確認してください。`);
     }
 
-    const response = await fetch(`${apiUrl}/api/v1/associate`, {
+    // プロキシかどうかで呼び出し方法を分ける
+    const apiUrl = baseUrl.includes('/api/w2v-proxy') 
+      ? baseUrl  // プロキシの場合はそのまま
+      : `${baseUrl}/api/v1/associate`;  // 直接APIの場合はパスを追加
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -217,7 +240,7 @@ export const fetchGenerationalAssociations = async (
     // より詳細なエラー情報を提供
     if (fetchError instanceof TypeError && fetchError.message.includes('Failed to fetch')) {
       throw new Error(`APIサーバーに接続できません。\n` +
-        `サーバーURL: ${apiUrl}\n` +
+        `サーバーURL: ${baseUrl}\n` +
         `確認事項:\n` +
         `1. APIサーバーが起動しているか\n` +
         `2. ポート8080が利用可能か\n` +
