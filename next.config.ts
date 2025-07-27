@@ -2,17 +2,19 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
-    // Vercelビルド時の型エラーを一時的に無視
+    // Vercelビルド時の型エラーを完全に無視
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Vercelビルド時のESLintエラーを一時的に無視
+    // Vercelビルド時のESLintエラーを完全に無視
     ignoreDuringBuilds: true,
   },
   // Vercel本番環境での最適化
   experimental: {
     optimizePackageImports: ['@mui/material', '@mui/icons-material'],
   },
+  // 静的最適化を無効にしてSSRモードに
+  output: 'standalone',
   async headers() {
     return [
       {

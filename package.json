@@ -6,6 +6,7 @@
     "local": "npm run dev",
     "dev": "next dev",
     "build": "next build",
+    "build:vercel": "next build",
     "start": "next start",
     "lint": "next lint",
     "start-w2v-api": "./scripts/start-w2v-api.bat",
