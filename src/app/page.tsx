@@ -59,7 +59,6 @@ export default function Home() {
             publicIp: result.publicIp,
             message: `API接続成功 (${result.publicIp})`
           });
-          console.log('✅ AWS ECS動的IP検出完了:', result);
         } else {
           setApiStatus({
             status: 'disconnected',
@@ -183,21 +182,11 @@ export default function Home() {
           if (apiResponse.generations && apiResponse.generations.length > 0) {
             // 各世代のデータを処理
             setGenerationProgress(`連想語データを処理中... (${apiResponse.generations.length}個の世代データ)`);
-            console.log('🔍 APIレスポンス詳細:', {
-              keyword: apiResponse.keyword,
-              generation: apiResponse.generation,
-              generations: apiResponse.generations.map(g => ({
-                generation_number: g.generation_number,
-                parent_word: g.parent_word,
-                results_count: g.results.length
-              }))
-            });
             
             // 世代ごとに処理
             apiResponse.generations.forEach((genData: import('@/lib/aiApiService').GenerationResult) => {
               if (genData.generation_number === 2) {
                 // 第2世代（キーワードからの直接連想語）
-                console.log(`📝 第2世代処理: ${genData.results.length}個のノードを追加`);
                 genData.results.forEach((wordObj: import('@/lib/aiApiService').AssociationWord) => {
                   const childNode: GenerationNode = {
                     word: wordObj.word,
@@ -217,7 +206,6 @@ export default function Home() {
                 );
                 
                 if (parentNode) {
-                  console.log(`📝 第3世代処理: 親「${genData.parent_word}」から${genData.results.length}個のノードを追加`);
                   genData.results.forEach((wordObj: import('@/lib/aiApiService').AssociationWord) => {
                     const childNode: GenerationNode = {
                       word: wordObj.word,
@@ -236,7 +224,6 @@ export default function Home() {
               }
             });
             
-            console.log(`✅ 最終ノード数: ${allNodes.length}個 (第1世代: 1個, 第2世代: ${allNodes.filter(n => n.generation === 2).length}個, 第3世代: ${allNodes.filter(n => n.generation === 3).length}個)`);
           }
 
           return allNodes;

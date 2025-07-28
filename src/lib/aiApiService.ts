@@ -2,42 +2,23 @@
 
 import { autoDiscoverAPIEndpoint } from './awsService';
 
-/**
- * 本番環境かどうかの判定（より確実な方法）
- */
-const isProductionEnvironment = (): boolean => {
-  // Next.js環境変数で確実に判定
-  if (process.env.NODE_ENV === 'production') {
-    return true;
-  }
-  
-  // ブラウザ環境でのHTTPS判定
-  if (typeof window !== 'undefined') {
-    return window.location.protocol === 'https:' || window.location.hostname.includes('vercel.app');
-  }
-  
-  return false;
-};
+// 本番環境ではHTTPSプロキシを使用、開発環境では直接アクセス
+const isProduction = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
 /**
  * APIエンドポイントの自動選択（本番環境ではプロキシ優先）
  */
 const getAvailableApiUrl = async (): Promise<string> => {
   // 本番環境（HTTPS）では常にプロキシを使用
-  if (isProductionEnvironment()) {
-    console.log('🔒 本番環境検出: HTTPSプロキシ経由でAPI接続');
-    console.log('🌐 NODE_ENV:', process.env.NODE_ENV);
-    console.log('🌐 ブラウザURL:', typeof window !== 'undefined' ? window.location.href : 'サーバーサイド');
+  if (isProduction) {
     return '/api/w2v-proxy';
   }
   
   // 開発環境では従来通りの動的検出を実行
-  console.log('🔍 開発環境: AWS ECSからパブリックIP自動検出を開始...');
   try {
     const discoveryResult = await autoDiscoverAPIEndpoint();
     
     if (discoveryResult.success && discoveryResult.apiUrl) {
-      console.log('✅ AWS ECS動的IP検出成功:', discoveryResult.apiUrl);
       return `${discoveryResult.apiUrl}/api/v1/associate`;
     } else {
       console.warn('⚠️ AWS ECS動的IP検出失敗:', discoveryResult.error);
@@ -46,14 +27,8 @@ const getAvailableApiUrl = async (): Promise<string> => {
     console.warn('⚠️ AWS ECS動的IP検出エラー:', error);
   }
   
-  // 開発環境のフォールバック（本番環境では絶対にHTTP URLを返さない）
-  if (isProductionEnvironment()) {
-    console.error('❌ 本番環境でプロキシ以外のURLは使用不可');
-    return '/api/w2v-proxy';  // プロキシを強制使用
-  }
-  
+  // フォールバック
   const fallbackUrl = process.env.NEXT_PUBLIC_W2V_API_BASE_URL || 'http://localhost:8080';
-  console.log('🔄 フォールバックURL使用:', fallbackUrl);
   return `${fallbackUrl}/api/v1/associate`;
 };
 

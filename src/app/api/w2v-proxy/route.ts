@@ -2,17 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
-  console.log('📥 HTTPSプロキシにリクエスト受信');
-  
   try {
     const body = await request.json();
-    console.log('📋 リクエストボディ:', JSON.stringify(body, null, 2));
-    
+
     // AWS ECS動的IP検出機能付きのAPI URL取得
     const apiUrl = await getApiUrl();
     const endpoint = `${apiUrl}/api/v1/associate`;
-    
-    console.log('🔄 プロキシ経由でAPI呼び出し:', endpoint);
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -52,15 +47,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('📥 HTTPSプロキシにGETリクエスト受信');
-  
   const { searchParams } = new URL(request.url);
   const word = searchParams.get('word');
   const count = searchParams.get('count') || '8';
   const mode = searchParams.get('mode') || 'noun';
   const generation = searchParams.get('generation') || '1';
-
-  console.log('📋 GETパラメータ:', { word, count, mode, generation });
 
   if (!word) {
     return NextResponse.json({ error: 'word parameter is required' }, { status: 400 });
@@ -70,8 +61,6 @@ export async function GET(request: NextRequest) {
     // AWS ECS動的IP検出機能付きのAPI URL取得
     const apiUrl = await getApiUrl();
     const endpoint = `${apiUrl}/api/v1/associate?word=${encodeURIComponent(word)}&count=${count}&mode=${mode}&generation=${generation}`;
-    
-    console.log('🔄 プロキシ経由でGETリクエスト:', endpoint);
     
     const response = await fetch(endpoint, {
       method: 'GET',
@@ -170,7 +159,6 @@ async function getApiUrl(): Promise<string> {
             
             if (publicIp) {
               apiUrl = `http://${publicIp}:8080`;
-              console.log(`✅ AWS ECS動的IP検出成功: ${apiUrl}`);
             }
           }
         }
