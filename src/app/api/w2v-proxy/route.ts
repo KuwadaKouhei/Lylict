@@ -2,8 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
+  console.log('📥 HTTPSプロキシにリクエスト受信');
+  
   try {
     const body = await request.json();
+    console.log('📋 リクエストボディ:', JSON.stringify(body, null, 2));
     
     // AWS ECS動的IP検出機能付きのAPI URL取得
     const apiUrl = await getApiUrl();
@@ -49,11 +52,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  console.log('📥 HTTPSプロキシにGETリクエスト受信');
+  
   const { searchParams } = new URL(request.url);
   const word = searchParams.get('word');
   const count = searchParams.get('count') || '8';
   const mode = searchParams.get('mode') || 'noun';
   const generation = searchParams.get('generation') || '1';
+
+  console.log('📋 GETパラメータ:', { word, count, mode, generation });
 
   if (!word) {
     return NextResponse.json({ error: 'word parameter is required' }, { status: 400 });
