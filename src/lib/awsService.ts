@@ -110,10 +110,17 @@ export const getECSServicePublicIP = async (): Promise<string | null> => {
 
 /**
  * 取得したパブリックIPでAPIの接続テスト
+ * 本番環境（HTTPS）では直接テストをスキップ
  */
 export const testAPIConnection = async (publicIp: string): Promise<boolean> => {
+  // 本番環境（HTTPS）では直接HTTP APIテストをスキップ
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    console.log('🔒 本番環境: HTTP API直接テストをスキップ（Mixed Content回避）');
+    return true; // 本番環境では常に成功として扱う
+  }
+  
   try {
-    console.log(`🧪 APIテスト開始: http://${publicIp}:8080`);
+    console.log(`🧪 開発環境でAPIテスト開始: http://${publicIp}:8080`);
     
     const response = await fetch(`http://${publicIp}:8080/api/v1/associate`, {
       method: 'POST',
@@ -142,6 +149,7 @@ export const testAPIConnection = async (publicIp: string): Promise<boolean> => {
 
 /**
  * 自動IP取得とAPI接続テスト
+ * 本番環境では接続テストをスキップしてIP取得のみ実行
  */
 export const autoDiscoverAPIEndpoint = async (): Promise<{
   success: boolean;
@@ -149,6 +157,9 @@ export const autoDiscoverAPIEndpoint = async (): Promise<{
   apiUrl: string | null;
   error?: string;
 }> => {
+  // 本番環境（HTTPS）では動的IP検出を簡素化
+  const isProduction = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  
   try {
     const publicIp = await getECSServicePublicIP();
     
@@ -161,6 +172,17 @@ export const autoDiscoverAPIEndpoint = async (): Promise<{
       };
     }
     
+    // 本番環境では接続テストをスキップ（Mixed Content回避）
+    if (isProduction) {
+      console.log('🔒 本番環境: API接続テストをスキップ（プロキシ経由で利用）');
+      return {
+        success: true,
+        publicIp,
+        apiUrl: `http://${publicIp}:8080`
+      };
+    }
+    
+    // 開発環境のみ接続テストを実行
     const isApiWorking = await testAPIConnection(publicIp);
     
     if (isApiWorking) {

@@ -625,7 +625,7 @@ export default function Home() {
                   // 複数の配置パターンを試行
                   for (let sectorOffset = 0; sectorOffset < 360; sectorOffset += 30) {
                     const sectorAngle = parentAngle + sectorOffset;
-                    let positions: { position: { x: number, y: number }, angle: number }[] = [];
+                    const positions: { position: { x: number, y: number }, angle: number }[] = [];
                     let totalScore = 0;
                     
                     if (childCount === 1) {
@@ -740,7 +740,7 @@ export default function Home() {
       let errorMessage = 'マインドマップの自動生成中にエラーが発生しました。';
       
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        errorMessage = 'APIサーバーに接続できません。\n\n以下を確認してください:\n1. 本番APIサーバーが稼働しているか\n2. サーバーが http://35.74.249.60:8080 で動作しているか\n3. ネットワーク接続が正常か\n\nローカル開発時は:\nD:/training/w2v_associateAPI で\n"pip install -r requirements.txt"\n"python main.py"';
+        errorMessage = 'APIサーバーに接続できません。\n\n以下を確認してください:\n1. 本番APIサーバーが稼働しているか\n2. サーバーが動作しているか\n3. ネットワーク接続が正常か\n\nローカル開発時は:\nD:/training/w2v_associateAPI で\n"pip install -r requirements.txt"\n"python main.py"';
       } else if (error instanceof Error) {
         if (error.message.includes('API内部エラー')) {
           errorMessage = `${error.message}\n\nAPIサーバーの設定を確認してください:\n1. Word2Vecモデルが正しく読み込まれているか\n2. 日本語の単語データが利用可能か\n3. サーバーログでエラー詳細を確認`;
