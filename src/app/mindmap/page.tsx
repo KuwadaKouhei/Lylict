@@ -596,8 +596,8 @@ const MindMapPage = () => {
   // 初期化が完了していない場合はローディング表示
   if (!initialized) {
     return (
-      <div style={{ height: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h6">読み込み中...</Typography>
+      <div style={{ height: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5' }}>
+        <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold' }}>読み込み中...</Typography>
       </div>
     );
   }
@@ -717,8 +717,8 @@ const MindMapPage = () => {
 
 // Suspenseで囲んでuseSearchParamsの問題を解決
 const MindMapPageWithSuspense = () => (
-  <Suspense fallback={<div style={{ height: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <Typography variant="h6">読み込み中...</Typography>
+  <Suspense fallback={<div style={{ height: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5' }}>
+    <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold' }}>読み込み中...</Typography>
   </div>}>
     <MindMapPage />
   </Suspense>
