@@ -207,12 +207,12 @@ export default function TitleInputModal({
                   disabled={isGenerating}
                 >
                   <option value="noun">名詞モード（具体的な言葉）</option>
-                  <option value="poetic">詩的モード（美しい表現）</option>
+                  <option value="poetic" disabled>詩的モード（美しい表現）※現在利用不可</option>
                 </select>
                 <p className={styles.hint}>
                   {mode === 'noun' 
                     ? '具体的で実用的な関連語を生成します' 
-                    : '詩的で美しい表現を生成します'
+                    : '詩的で美しい表現を生成します（現在利用不可）'
                   }
                 </p>
               </div>
