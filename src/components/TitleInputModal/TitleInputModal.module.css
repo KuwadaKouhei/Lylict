@@ -22,6 +22,8 @@
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   animation: modalAppear 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes modalAppear {
@@ -103,6 +105,8 @@
 
 .tabContent {
   min-height: 300px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .form {
@@ -250,14 +254,25 @@
   .modal {
     width: 95%;
     margin: 1rem;
+    max-height: 85vh;
   }
 
   .header {
     padding: 1rem;
+    flex-shrink: 0;
   }
 
   .title {
     font-size: 1.2rem;
+  }
+
+  .tabs {
+    flex-shrink: 0;
+  }
+
+  .tabContent {
+    min-height: 200px;
+    max-height: calc(85vh - 140px);
   }
 
   .form {
@@ -266,10 +281,70 @@
 
   .actions {
     flex-direction: column;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-radius: 0 0 16px 16px;
   }
 
   .cancelButton,
   .confirmButton {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal {
+    width: 98%;
+    margin: 0.5rem;
+    max-height: 90vh;
+  }
+
+  .header {
+    padding: 0.8rem;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .tabContent {
+    max-height: calc(90vh - 120px);
+  }
+
+  .form {
+    padding: 0.8rem;
+  }
+
+  .inputGroup {
+    margin-bottom: 1rem;
+  }
+
+  .label {
+    font-size: 0.9rem;
+  }
+
+  .input,
+  .select {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .hint {
+    font-size: 0.8rem;
+  }
+
+  .actions {
+    padding: 0.8rem;
+    gap: 0.5rem;
+  }
+
+  .cancelButton,
+  .confirmButton {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
   }
 }

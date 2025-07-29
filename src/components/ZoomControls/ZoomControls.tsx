@@ -85,23 +85,23 @@ const ZoomControls: React.FC = () => {
       <StyledButtonGroup
         orientation="vertical"
         variant="text"
-        size={{ xs: 'small', sm: 'medium' }}
+        size="medium"
       >
         <Tooltip title="ズームイン" placement="right">
-          <IconButton onClick={handleZoomIn} size={{ xs: 'small', sm: 'medium' }}>
-            <ZoomInIcon fontSize={{ xs: 'small', sm: 'medium' }} />
+          <IconButton onClick={handleZoomIn} size="medium">
+            <ZoomInIcon fontSize="medium" />
           </IconButton>
         </Tooltip>
         
         <Tooltip title="ズームアウト" placement="right">
-          <IconButton onClick={handleZoomOut} size={{ xs: 'small', sm: 'medium' }}>
-            <ZoomOutIcon fontSize={{ xs: 'small', sm: 'medium' }} />
+          <IconButton onClick={handleZoomOut} size="medium">
+            <ZoomOutIcon fontSize="medium" />
           </IconButton>
         </Tooltip>
         
         <Tooltip title="全体表示" placement="right">
-          <IconButton onClick={handleFitView} size={{ xs: 'small', sm: 'medium' }}>
-            <CenterFocusStrongIcon fontSize={{ xs: 'small', sm: 'medium' }} />
+          <IconButton onClick={handleFitView} size="medium">
+            <CenterFocusStrongIcon fontSize="medium" />
           </IconButton>
         </Tooltip>
       </StyledButtonGroup>

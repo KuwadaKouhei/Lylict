@@ -471,12 +471,17 @@ export default function Home() {
         return intersections;
       };
 
-      // 世代ごとのノード配置を計算
+      // 世代ごとのノード配置を計算（完全新規実装）
       const calculateGenerationLayout = (nodes: GenerationNode[]) => {
         const reactFlowNodes: any[] = [];
         const reactFlowEdges: any[] = [];
         
-        // 新しい円形レイアウトシステム
+        // ノードサイズの定数定義
+        const nodeWidth = 150;  // CustomNodeの推定幅
+        const nodeHeight = 50;  // CustomNodeの推定高さ
+        const minNodeDistance = 200; // ノード間の最小距離
+        
+        // 世代別にノードを分類
         const nodesByGeneration = nodes.reduce((acc, node) => {
           if (!acc[node.generation]) acc[node.generation] = [];
           acc[node.generation].push(node);
@@ -485,192 +490,91 @@ export default function Home() {
 
         const maxGeneration = Math.max(...Object.keys(nodesByGeneration).map(Number));
         
-        // 等間隔配置のための半径計算システム
-        const calculateUniformRadii = () => {
-          const radii: Record<number, number> = {};
-          const baseRadialStep = 120; // 世代間の固定距離（短いエッジを実現）
+        // 改良された円状配置アルゴリズム
+        const calculateOptimalLayout = () => {
+          console.log('🎯 最適化されたレイアウト計算開始');
           
-          for (let gen = 1; gen <= maxGeneration; gen++) {
-            if (gen === 1) {
-              radii[gen] = 0; // 中心
-            } else {
-              const nodeCount = nodesByGeneration[gen]?.length || 0;
-              if (nodeCount === 0) continue;
-              
-              // 等間隔に必要な最小半径を計算
-              const nodeWidth = 110; // ノード幅 + マージン
-              const minCircumference = nodeCount * nodeWidth;
-              const minRadius = minCircumference / (2 * Math.PI);
-              
-              // 前世代からの最小距離と等間隔要件の両方を満たす
-              const prevRadius = radii[gen - 1] || 0;
-              const minRadiusFromPrev = prevRadius + baseRadialStep;
-              
-              radii[gen] = Math.max(minRadius, minRadiusFromPrev);
-            }
-          }
-          
-          return radii;
-        };
-        
-        const uniformRadii = calculateUniformRadii();
-
-        // 等間隔配置のヘルパー関数
-        const calculateUniformAngles = (nodeCount: number, startAngle = 0) => {
-          const angles: number[] = [];
-          const angleStep = 360 / nodeCount;
-          
-          for (let i = 0; i < nodeCount; i++) {
-            angles.push(startAngle + (i * angleStep));
-          }
-          
-          return angles;
-        };
-
-        // 等間隔配置アルゴリズム
-        Object.entries(nodesByGeneration)
-          .sort(([a], [b]) => parseInt(a) - parseInt(b))
-          .forEach(([genStr, genNodes]) => {
-            const generation = parseInt(genStr);
-            const radius = uniformRadii[generation];
+          // 各世代の最適半径を計算
+          const calculateOptimalRadii = () => {
+            const radii: Record<number, number> = {};
             
-            if (generation === 1) {
-              // 第1世代（中心ノード）
-              const centerNode = {
-                id: genNodes[0].id,
-                type: 'customNode',
-                data: { 
-                  label: genNodes[0].word, 
-                  isNew: false,
-                  generation: genNodes[0].generation 
-                },
-                position: { x: -50, y: -25 },
-              };
-              reactFlowNodes.push(centerNode);
-            } else if (generation === 2) {
-              // 第2世代：中心周りに完全等間隔配置
-              const uniformAngles = calculateUniformAngles(genNodes.length);
+            for (let gen = 1; gen <= maxGeneration; gen++) {
+              if (gen === 1) {
+                radii[gen] = 0; // 中心
+              } else {
+                const nodeCount = nodesByGeneration[gen]?.length || 0;
+                if (nodeCount === 0) continue;
+                
+                // 円周上に配置するために必要な最小半径を計算
+                // 隣接ノード間の距離がminNodeDistance以上になるような半径
+                const requiredCircumference = nodeCount * minNodeDistance;
+                const minRadiusForSpacing = requiredCircumference / (2 * Math.PI);
+                
+                // 前世代からの最小距離（第3世代以降は適度に短く）
+                const prevRadius = radii[gen - 1] || 0;
+                const generationGap = gen >= 3 ? minNodeDistance * 0.8 : minNodeDistance; // 第3世代以降は20%短く
+                const minRadiusFromPrev = prevRadius + generationGap;
+                
+                // より大きい方を採用
+                radii[gen] = Math.max(minRadiusForSpacing, minRadiusFromPrev);
+                
+                console.log(`📐 第${gen}世代の半径計算:`, {
+                  nodeCount,
+                  requiredCircumference,
+                  minRadiusForSpacing,
+                  minRadiusFromPrev,
+                  selectedRadius: radii[gen]
+                });
+              }
+            }
+            
+            return radii;
+          };
+          
+          const optimalRadii = calculateOptimalRadii();
+          
+          // 各世代のノードを配置
+          Object.entries(nodesByGeneration)
+            .sort(([a], [b]) => parseInt(a) - parseInt(b))
+            .forEach(([genStr, genNodes]) => {
+              const generation = parseInt(genStr);
+              const radius = optimalRadii[generation];
               
-              genNodes.forEach((node, index) => {
-                const angle = uniformAngles[index];
-                const angleRad = angle * (Math.PI / 180);
-                
-                const position = {
-                  x: Math.sin(angleRad) * radius - 50,
-                  y: -Math.cos(angleRad) * radius - 25,
-                };
-                
-                const reactFlowNode = {
-                  id: node.id,
+              console.log(`🌟 第${generation}世代の配置開始:`, {
+                nodeCount: genNodes.length,
+                radius: radius
+              });
+              
+              if (generation === 1) {
+                // 第1世代（中心ノード）
+                const centerNode = {
+                  id: genNodes[0].id,
                   type: 'customNode',
                   data: { 
-                    label: node.word, 
+                    label: genNodes[0].word, 
                     isNew: false,
-                    generation: node.generation 
+                    generation: genNodes[0].generation 
                   },
-                  position: position,
+                  position: { x: -(nodeWidth / 2), y: -(nodeHeight / 2) },
                 };
-                reactFlowNodes.push(reactFlowNode);
+                reactFlowNodes.push(centerNode);
                 
-                // エッジを作成
-                if (node.parentId) {
-                  const edge = {
-                    id: `e${node.parentId}-${node.id}`,
-                    source: node.parentId,
-                    target: node.id,
-                    sourceHandle: 'right',
-                    targetHandle: 'left',
+                console.log('🎯 中心ノード配置:', centerNode);
+                
+              } else if (generation === 2) {
+                // 第2世代：中心周りに完全等間隔配置（90度回転）
+                const nodeCount = genNodes.length;
+                
+                genNodes.forEach((node, index) => {
+                  // 90度から開始して等間隔に配置
+                  const angle = 90 + (index * 360) / nodeCount;
+                  const angleRad = (angle * Math.PI) / 180;
+                  
+                  // 極座標から直交座標への変換
+                  const position = {
+                    x: Math.cos(angleRad) * radius - (nodeWidth / 2),
+                    y: Math.sin(angleRad) * radius - (nodeHeight / 2),
                   };
-                  reactFlowEdges.push(edge);
-                }
-              });
-            } else {
-              // 第3世代以降：親グループごとに等間隔配置
-              const parentGroups = genNodes.reduce((groups, node) => {
-                const parentId = node.parentId!;
-                if (!groups[parentId]) groups[parentId] = [];
-                groups[parentId].push(node);
-                return groups;
-              }, {} as Record<string, GenerationNode[]>);
-              
-              Object.entries(parentGroups).forEach(([parentId, children]) => {
-                const parentNode = reactFlowNodes.find(n => n.id === parentId);
-                if (!parentNode) return;
-                
-                // 親の角度を基準に子ノードの配置セクターを決定
-                const parentAngle = Math.atan2(
-                  parentNode.position.y + 25, 
-                  parentNode.position.x + 50
-                ) * 180 / Math.PI;
-                
-                // 衝突回避のための最適配置を探索
-                const findCollisionFreePositions = () => {
-                  const childCount = children.length;
-                  let bestPositions: { position: { x: number, y: number }, angle: number }[] = [];
-                  let bestScore = -Infinity;
-                  
-                  // 複数の配置パターンを試行
-                  for (let sectorOffset = 0; sectorOffset < 360; sectorOffset += 30) {
-                    const sectorAngle = parentAngle + sectorOffset;
-                    const positions: { position: { x: number, y: number }, angle: number }[] = [];
-                    let totalScore = 0;
-                    
-                    if (childCount === 1) {
-                      // 単一子ノード：親の方向に配置
-                      const angle = sectorAngle;
-                      const angleRad = angle * (Math.PI / 180);
-                      const position = {
-                        x: Math.sin(angleRad) * radius - 50,
-                        y: -Math.cos(angleRad) * radius - 25,
-                      };
-                      positions.push({ position, angle });
-                    } else {
-                      // 複数子ノード：セクター内に等間隔配置
-                      const sectorWidth = Math.min(60, 360 / Math.max(1, genNodes.length / 2)); // 適応的セクター幅
-                      const startAngle = sectorAngle - (sectorWidth / 2);
-                      const angleStep = sectorWidth / Math.max(1, childCount - 1);
-                      
-                      for (let i = 0; i < childCount; i++) {
-                        const angle = startAngle + (i * angleStep);
-                        const angleRad = angle * (Math.PI / 180);
-                        const position = {
-                          x: Math.sin(angleRad) * radius - 50,
-                          y: -Math.cos(angleRad) * radius - 25,
-                        };
-                        positions.push({ position, angle });
-                      }
-                    }
-                    
-                    // 各位置のスコアを計算
-                    positions.forEach((pos, i) => {
-                      const testNode = {
-                        id: children[i].id,
-                        position: pos.position,
-                        generation: generation
-                      };
-                      
-                      const testEdge = {
-                        source: parentId,
-                        target: children[i].id,
-                      };
-                      
-                      const score = calculateLayoutScore(testNode, testEdge, reactFlowNodes, reactFlowEdges);
-                      totalScore += score;
-                    });
-                    
-                    if (totalScore > bestScore) {
-                      bestScore = totalScore;
-                      bestPositions = positions;
-                    }
-                  }
-                  
-                  return bestPositions;
-                };
-                
-                const optimalPositions = findCollisionFreePositions();
-                
-                children.forEach((node, index) => {
-                  const position = optimalPositions[index]?.position || { x: 0, y: 0 };
                   
                   const reactFlowNode = {
                     id: node.id,
@@ -684,19 +588,104 @@ export default function Home() {
                   };
                   reactFlowNodes.push(reactFlowNode);
                   
-                  // エッジを作成
-                  const edge = {
-                    id: `e${node.parentId}-${node.id}`,
-                    source: node.parentId!,
-                    target: node.id,
-                    sourceHandle: 'right',
-                    targetHandle: 'left',
-                  };
-                  reactFlowEdges.push(edge);
+                  console.log(`📍 第2世代ノード${index}:`, {
+                    word: node.word,
+                    angle: angle,
+                    position: position
+                  });
+                  
+                  // エッジを作成（中心ノードへの接続）
+                  if (node.parentId) {
+                    const edge = {
+                      id: `e${node.parentId}-${node.id}`,
+                      source: node.parentId,
+                      target: node.id,
+                      type: 'floating',
+                    };
+                    reactFlowEdges.push(edge);
+                  }
                 });
-              });
-            }
-          });
+                
+              } else {
+                // 第3世代以降：親ノードの延長線上に放射状配置
+                // 親ノードごとにグループ化
+                const parentGroups = genNodes.reduce((groups, node) => {
+                  const parentId = node.parentId!;
+                  if (!groups[parentId]) groups[parentId] = [];
+                  groups[parentId].push(node);
+                  return groups;
+                }, {} as Record<string, GenerationNode[]>);
+                
+                Object.entries(parentGroups).forEach(([parentId, children]) => {
+                  const parentNode = reactFlowNodes.find(n => n.id === parentId);
+                  if (!parentNode) return;
+                  
+                  // 親ノードの中心から見た角度を計算（中心ノードからの放射角度）
+                  const parentAngle = Math.atan2(
+                    parentNode.position.y + (nodeHeight / 2), 
+                    parentNode.position.x + (nodeWidth / 2)
+                  );
+                  
+                  children.forEach((node, childIndex) => {
+                    let angle = parentAngle;
+                    
+                    // 同じ親に複数の子がある場合、30度範囲内で等間隔に配置
+                    if (children.length > 1) {
+                      const totalAngleRange = 30; // 度（30度範囲に調整）
+                      const angleOffset = totalAngleRange / (children.length - 1);
+                      const startOffset = -totalAngleRange / 2;
+                      angle = parentAngle + (startOffset + childIndex * angleOffset) * Math.PI / 180;
+                    }
+                    
+                    // 親ノードの延長線上に配置（中心からの放射線方向）
+                    const position = {
+                      x: Math.cos(angle) * radius - (nodeWidth / 2),
+                      y: Math.sin(angle) * radius - (nodeHeight / 2),
+                    };
+                    
+                    const reactFlowNode = {
+                      id: node.id,
+                      type: 'customNode',
+                      data: { 
+                        label: node.word, 
+                        isNew: false,
+                        generation: node.generation 
+                      },
+                      position: position,
+                    };
+                    reactFlowNodes.push(reactFlowNode);
+                    
+                    console.log(`📍 第${generation}世代ノード:`, {
+                      word: node.word,
+                      parentWord: parentNode.data.label,
+                      angle: angle * 180 / Math.PI,
+                      position: position
+                    });
+                    
+                    // エッジを作成（親ノードへの接続）
+                    const edge = {
+                      id: `e${parentId}-${node.id}`,
+                      source: parentId,
+                      target: node.id,
+                      type: 'floating',
+                    };
+                    reactFlowEdges.push(edge);
+                  });
+                });
+              }
+            });
+        };
+        
+        calculateOptimalLayout();
+        
+        console.log('✅ レイアウト計算完了:', {
+          totalNodes: reactFlowNodes.length,
+          totalEdges: reactFlowEdges.length,
+          nodesByGeneration: Object.keys(nodesByGeneration).map(gen => ({
+            generation: gen,
+            count: nodesByGeneration[parseInt(gen)].length
+          }))
+        });
         
         return { nodes: reactFlowNodes, edges: reactFlowEdges };
       };
@@ -706,6 +695,14 @@ export default function Home() {
       setGenerationProgress('マインドマップを作成中...');
       
       // Reduxストアに直接データをセット
+      console.log('📊 自動生成完了 - Reduxに保存するデータ:', {
+        title: title,
+        nodesCount: generatedNodes.length,
+        edgesCount: generatedEdges.length,
+        nodes: generatedNodes,
+        edges: generatedEdges
+      });
+      
       dispatch(createAutoGeneratedMindMap({
         title: title,
         nodes: generatedNodes,

@@ -52,6 +52,15 @@ const MindMapFlowInternal = () => {
     edges: originalEdges
   } = mindmapState;
   
+  // デバッグログ: Redux storeからのデータを確認
+  console.log('🔍 MindMapFlowInternal - Redux State:', {
+    nodesCount: nodes.length,
+    edgesCount: originalEdges.length,
+    nodes: nodes,
+    edges: originalEdges,
+    mindmapState
+  });
+  
   // エッジにfloatingタイプを適用
   const edges = originalEdges.map(edge => ({
     ...edge,
@@ -448,6 +457,14 @@ const MindMapFlowInternal = () => {
 
   // デバッグログを削除してパフォーマンスを改善
 
+  // ReactFlowに渡すデータの最終確認
+  console.log('⚡ ReactFlowに渡すデータ:', {
+    nodesCount: nodes.length,
+    edgesCount: edges.length,
+    nodes: nodes,
+    edges: edges
+  });
+
   return (
     <>
       <ReactFlow
@@ -567,6 +584,13 @@ const MindMapPage = () => {
       // 自動生成モードの場合（データは既にReduxストアにセット済み）
       if (autoGenerate === 'true') {
         // 自動生成の場合は状態をリセットしない（データは既にセット済み）
+        console.log('🚀 自動生成モード検出 - Redux状態確認:', {
+          nodesCount: nodes.length,
+          edgesCount: edges.length,
+          currentTitle: currentMindMapTitle,
+          nodes: nodes,
+          edges: edges
+        });
       }
       // 手動作成モードの場合は状態をリセット
       else {

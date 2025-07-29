@@ -142,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               startIcon={<AddIcon />}
               onClick={handleNewMindMap}
               fullWidth
-              size={{ xs: 'small', sm: 'medium' }}
+              size="medium"
             >
               新規作成
             </Button>
@@ -151,8 +151,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               startIcon={<SaveIcon />}
               onClick={handleSaveMindMap}
               disabled={isLoading}
-              fullWidth={{ xs: true, sm: false }}
-              size={{ xs: 'small', sm: 'medium' }}
+              size="medium"
             >
               保存
             </Button>
@@ -187,7 +186,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <IconButton
                       edge="end"
                       onClick={(e) => handleDeleteMindMap(mindMap.id!, e)}
-                      size={{ xs: 'small', sm: 'medium' }}
+                      size="medium"
                     >
                       <DeleteIcon />
                     </IconButton>

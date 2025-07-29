@@ -80,10 +80,10 @@ const FloatingAddButton: React.FC<FloatingAddButtonProps> = ({ onClick }) => {
       <StyledFab
         color="primary"
         onClick={onClick}
-        size={{ xs: 'medium', sm: 'large' }}
+        size="large"
         aria-label="add node"
       >
-        <AddIcon fontSize={{ xs: 'medium', sm: 'large' }} />
+        <AddIcon fontSize="large" />
       </StyledFab>
     </Tooltip>
   );
