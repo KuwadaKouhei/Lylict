@@ -94,6 +94,7 @@
   align-items: flex-start;
   margin-bottom: 2rem;
   gap: 2rem;
+  flex-wrap: wrap;
 }
 
 .titleSection {
@@ -365,6 +366,17 @@
     padding: 2rem 1rem;
   }
 
+  .headerTop {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .titleSection {
+    text-align: center;
+  }
+
   .title {
     font-size: 2.5rem;
   }
@@ -413,6 +425,10 @@
 @media (max-width: 480px) {
   .header {
     padding: 1.5rem 0.5rem;
+  }
+
+  .headerTop {
+    gap: 0.5rem;
   }
 
   .title {

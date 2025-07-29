@@ -15,6 +15,18 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   backdropFilter: 'blur(10px)',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
   border: '1px solid rgba(255, 255, 255, 0.2)',
+  
+  // レスポンシブ対応
+  [theme.breakpoints.down('md')]: {
+    bottom: 20,
+    left: 20,
+  },
+  
+  [theme.breakpoints.down('sm')]: {
+    bottom: 16,
+    left: 16,
+    transform: 'scale(0.9)',
+  },
 }));
 
 const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
@@ -73,23 +85,23 @@ const ZoomControls: React.FC = () => {
       <StyledButtonGroup
         orientation="vertical"
         variant="text"
-        size="medium"
+        size={{ xs: 'small', sm: 'medium' }}
       >
         <Tooltip title="ズームイン" placement="right">
-          <IconButton onClick={handleZoomIn} size="medium">
-            <ZoomInIcon />
+          <IconButton onClick={handleZoomIn} size={{ xs: 'small', sm: 'medium' }}>
+            <ZoomInIcon fontSize={{ xs: 'small', sm: 'medium' }} />
           </IconButton>
         </Tooltip>
         
         <Tooltip title="ズームアウト" placement="right">
-          <IconButton onClick={handleZoomOut} size="medium">
-            <ZoomOutIcon />
+          <IconButton onClick={handleZoomOut} size={{ xs: 'small', sm: 'medium' }}>
+            <ZoomOutIcon fontSize={{ xs: 'small', sm: 'medium' }} />
           </IconButton>
         </Tooltip>
         
         <Tooltip title="全体表示" placement="right">
-          <IconButton onClick={handleFitView} size="medium">
-            <CenterFocusStrongIcon />
+          <IconButton onClick={handleFitView} size={{ xs: 'small', sm: 'medium' }}>
+            <CenterFocusStrongIcon fontSize={{ xs: 'small', sm: 'medium' }} />
           </IconButton>
         </Tooltip>
       </StyledButtonGroup>

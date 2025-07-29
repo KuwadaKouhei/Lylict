@@ -62,3 +62,60 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .loginButton {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .userInfo {
+    padding: 6px 12px;
+    gap: 8px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .userName {
+    font-size: 12px;
+  }
+
+  .logoutButton {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .loginButton {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+
+  .userInfo {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .userName {
+    font-size: 11px;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .logoutButton {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+}

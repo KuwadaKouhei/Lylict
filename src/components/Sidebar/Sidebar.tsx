@@ -116,7 +116,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   return (
     <>
       <Drawer anchor="left" open={isOpen} onClose={onClose}>
-        <Box sx={{ width: 350, p: 2 }}>
+        <Box sx={{ 
+          width: { xs: '90vw', sm: 400, md: 350 }, 
+          maxWidth: '100vw',
+          p: { xs: 1, sm: 2 } 
+        }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             マインドマップ
           </Typography>
@@ -127,12 +131,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </Alert>
           )}
 
-          <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
+          <Box sx={{ 
+            mb: 2, 
+            display: 'flex', 
+            gap: 1,
+            flexDirection: { xs: 'column', sm: 'row' }
+          }}>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleNewMindMap}
               fullWidth
+              size={{ xs: 'small', sm: 'medium' }}
             >
               新規作成
             </Button>
@@ -141,6 +151,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               startIcon={<SaveIcon />}
               onClick={handleSaveMindMap}
               disabled={isLoading}
+              fullWidth={{ xs: true, sm: false }}
+              size={{ xs: 'small', sm: 'medium' }}
             >
               保存
             </Button>
@@ -148,7 +160,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           <Divider sx={{ mb: 2 }} />
 
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
+          <Typography variant="subtitle1" sx={{ 
+            mb: 1,
+            fontSize: { xs: '0.9rem', sm: '1rem' }
+          }}>
             保存済みマインドマップ
           </Typography>
 
@@ -165,12 +180,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     border: currentMindMapId === mindMap.id ? '2px solid #1976d2' : '1px solid #e0e0e0',
                     borderRadius: 1,
                     mb: 1,
+                    px: { xs: 1, sm: 2 },
+                    py: { xs: 0.5, sm: 1 }
                   }}
                   secondaryAction={
                     <IconButton
                       edge="end"
                       onClick={(e) => handleDeleteMindMap(mindMap.id!, e)}
-                      size="small"
+                      size={{ xs: 'small', sm: 'medium' }}
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -180,12 +197,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <ListItemText
                       primary={mindMap.title}
                       secondary={`更新: ${formatDate(mindMap.updatedAt)}`}
+                      primaryTypographyProps={{
+                        fontSize: { xs: '0.85rem', sm: '1rem' },
+                        fontWeight: 500
+                      }}
+                      secondaryTypographyProps={{
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                      }}
                     />
                   </ListItemButton>
                 </ListItem>
               ))}
               {savedMindMaps.length === 0 && (
-                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', p: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ 
+                  textAlign: 'center', 
+                  p: 2,
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                }}>
                   保存済みのマインドマップがありません
                 </Typography>
               )}

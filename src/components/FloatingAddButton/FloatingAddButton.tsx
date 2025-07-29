@@ -43,6 +43,21 @@ const StyledFab = styled(Fab)(({ theme }) => ({
   animation: `${pulse} 2s infinite`,
   transition: 'all 0.3s ease-in-out',
   
+  // レスポンシブ対応
+  [theme.breakpoints.down('md')]: {
+    bottom: 20,
+    right: 20,
+    width: 48,
+    height: 48,
+  },
+  
+  [theme.breakpoints.down('sm')]: {
+    bottom: 16,
+    right: 16,
+    width: 44,
+    height: 44,
+  },
+  
   '&:hover': {
     background: 'linear-gradient(45deg, #1565c0 30%, #1976d2 90%)',
     boxShadow: '0 12px 20px rgba(25, 118, 210, 0.4)',
@@ -65,10 +80,10 @@ const FloatingAddButton: React.FC<FloatingAddButtonProps> = ({ onClick }) => {
       <StyledFab
         color="primary"
         onClick={onClick}
-        size="large"
+        size={{ xs: 'medium', sm: 'large' }}
         aria-label="add node"
       >
-        <AddIcon fontSize="large" />
+        <AddIcon fontSize={{ xs: 'medium', sm: 'large' }} />
       </StyledFab>
     </Tooltip>
   );
