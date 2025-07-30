@@ -29,7 +29,9 @@ const MindMapFlow: React.FC = () => {
       
       // 現在の表示範囲を計算（ReactFlowの座標系）
       const containerWidth = window.innerWidth;
-      const containerHeight = window.innerHeight - 60; // ヘッダー分を除く
+      // モバイルとデスクトップでヘッダー高さを動的に計算
+      const headerHeight = window.innerWidth <= 600 ? 48 : 60;
+      const containerHeight = window.innerHeight - headerHeight;
       
       // ビューポート座標をワールド座標に変換
       const viewWidth = containerWidth / viewport.zoom;

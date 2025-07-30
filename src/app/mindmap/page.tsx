@@ -481,7 +481,11 @@ const MindMapFlowInternal = () => {
         connectOnClick={false}
         connectionMode={'loose' as any}
         connectionRadius={20}
-        defaultViewport={{ x: 0, y: 0, zoom: 1.5 }}
+        defaultViewport={{ 
+          x: 0, 
+          y: 0, 
+          zoom: typeof window !== 'undefined' && window.innerWidth <= 768 ? 1.0 : 1.5 
+        }}
         minZoom={0.05}
         maxZoom={3}
       >
@@ -681,7 +685,16 @@ const MindMapPage = () => {
 
 
   return (
-    <div style={{ height: '100vh', width: '100%' }}>
+    <div style={{ 
+      height: '100vh', 
+      width: '100%',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      overflow: 'hidden'
+    }}>
       {/* ヘッダー */}
       <Box
         sx={{
@@ -692,40 +705,74 @@ const MindMapPage = () => {
           zIndex: 10,
           backgroundColor: 'white',
           borderBottom: '1px solid #e0e0e0',
-          padding: 1,
+          padding: { xs: '4px 8px', sm: 1 },
           display: 'flex',
           alignItems: 'center',
-          gap: 2,
+          gap: { xs: 1, sm: 2 },
+          height: { xs: '48px', sm: '60px' },
+          minHeight: { xs: '48px', sm: '60px' }
         }}
       >
-        <IconButton onClick={handleGoHome} size="large" title="ホームに戻る">
+        <IconButton 
+          onClick={handleGoHome} 
+          size="medium" 
+          title="ホームに戻る"
+          sx={{ fontSize: { xs: '20px', sm: '24px' } }}
+        >
           <HomeIcon />
         </IconButton>
         
-        <IconButton onClick={() => setSidebarOpen(true)} size="large">
+        <IconButton 
+          onClick={() => setSidebarOpen(true)} 
+          size="medium"
+          sx={{ fontSize: { xs: '20px', sm: '24px' } }}
+        >
           <MenuIcon />
         </IconButton>
         
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            flexGrow: 1, 
+            fontSize: { xs: '14px', sm: '18px' },
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}
+        >
           {currentMindMapTitle} {editingId && <span style={{ fontSize: '0.8em', color: '#666' }}>(編集中)</span>}
         </Typography>
         
         <Button
           variant="contained"
-          startIcon={<SaveIcon />}
+          startIcon={<SaveIcon sx={{ fontSize: { xs: '16px', sm: '20px' } }} />}
           onClick={handleSave}
           disabled={isLoading}
           size="small"
+          sx={{ 
+            fontSize: { xs: '12px', sm: '14px' },
+            padding: { xs: '4px 8px', sm: '6px 16px' },
+            minWidth: { xs: '60px', sm: 'auto' }
+          }}
         >
           {editingId ? '更新' : '保存'}
         </Button>
       </Box>
       
-      <div style={{ paddingTop: '60px', height: 'calc(100vh - 60px)', position: 'relative' }}>
+      <Box
+        sx={{
+          position: 'absolute',
+          top: { xs: '48px', sm: '60px' },
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflow: 'hidden'
+        }}
+      >
         <ReactFlowProvider>
           <MindMapFlowInternal />
         </ReactFlowProvider>
-      </div>
+      </Box>
       
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       

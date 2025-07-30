@@ -1,7 +1,29 @@
 'use client';
 
 import { useState } from 'react';
-import styles from './TitleInputModal.module.css';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Typography,
+  Box,
+  Tabs,
+  Tab,
+  IconButton,
+  FormHelperText,
+  CircularProgress
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 
 interface TitleInputModalProps {
   isOpen: boolean;
@@ -70,193 +92,351 @@ export default function TitleInputModal({
   };
 
   return (
-    <div className={styles.overlay} onClick={handleClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>新しいマインドマップを作成</h2>
-          <button className={styles.closeButton} onClick={handleClose}>
-            ×
-          </button>
-        </div>
+    <Dialog
+      open={isOpen}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          minHeight: 400,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(255, 255, 255, 0.95)',
+            zIndex: 0,
+          }
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        pb: 1,
+        position: 'relative',
+        zIndex: 1,
+        background: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+        color: 'white',
+        margin: -4,
+        marginBottom: 0,
 
+      }}>
+        <Typography variant="h6" component="div" sx={{ pl: 3, pt: 3, fontWeight: 600 }}>
+          ✨ 新しいマインドマップを作成
+        </Typography>
+        <IconButton
+          aria-label="close"
+          onClick={handleClose}
+          sx={{ 
+            mt: 3,
+            mr: 3,
+            color: 'white',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)'
+            }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent sx={{ 
+        pt: 3, 
+        px: 4,
+        pb: 2,
+        position: 'relative', 
+        zIndex: 1,
+        background: 'rgba(255, 255, 255, 0.98)',
+        borderRadius: '0 0 12px 12px'
+      }}>
         {/* タブナビゲーション */}
-        <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${activeTab === 'manual' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('manual')}
-            type="button"
+        <Box sx={{ borderBottom: 1, borderColor: '#E3F2FD', mb: 3 }}>
+          <Tabs 
+            value={activeTab} 
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            aria-label="creation mode tabs"
+            sx={{
+              '& .MuiTab-root': {
+                minHeight: 56,
+                fontWeight: 600,
+                '&.Mui-selected': {
+                  color: '#1976D2',
+                  background: 'linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(25, 118, 210, 0.1) 100%)'
+                }
+              },
+              '& .MuiTabs-indicator': {
+                background: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+                height: 3,
+                borderRadius: '2px 2px 0 0'
+              }
+            }}
           >
-            🖊️ 手動入力
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'auto' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('auto')}
-            type="button"
-          >
-            🤖 AI自動生成
-          </button>
-        </div>
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <EditIcon fontSize="small" />
+                  手動入力
+                </Box>
+              } 
+              value="manual" 
+            />
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SmartToyIcon fontSize="small" />
+                  AI自動生成
+                </Box>
+              } 
+              value="auto" 
+            />
+          </Tabs>
+        </Box>
 
         {/* タブコンテンツ */}
-        <div className={styles.tabContent}>
+        <Box component="form" onSubmit={activeTab === 'manual' ? handleManualSubmit : handleAutoGenerate}>
           {activeTab === 'manual' ? (
-            <form onSubmit={handleManualSubmit} className={styles.form}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="mindmap-title" className={styles.label}>
-                  タイトル
-                </label>
-                <input
-                  id="mindmap-title"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="マインドマップのタイトルを入力してください"
-                  className={styles.input}
-                  autoFocus
-                  maxLength={100}
-                />
-              </div>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
+                label="📝 タイトル"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="マインドマップのタイトルを入力してください"
+                fullWidth
+                autoFocus
+                inputProps={{ maxLength: 100 }}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2196F3',
+                      borderWidth: 2,
+                    }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#1976D2',
+                    fontWeight: 600
+                  }
+                }}
+              />
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="first-word" className={styles.label}>
-                  最初のワード（中心テーマ）
-                </label>
-                <input
-                  id="first-word"
-                  type="text"
-                  value={firstWord}
-                  onChange={(e) => setFirstWord(e.target.value)}
-                  placeholder="マインドマップの中心となるワードを入力してください"
-                  className={styles.input}
-                  maxLength={50}
-                />
-                <p className={styles.hint}>
-                  このワードがマインドマップの中心ノードとして表示されます
-                </p>
-              </div>
-              
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className={styles.cancelButton}
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="submit"
-                  disabled={!title.trim() || !firstWord.trim()}
-                  className={styles.confirmButton}
-                >
-                  作成
-                </button>
-              </div>
-            </form>
+              <TextField
+                label="🎯 最初のワード（中心テーマ）"
+                value={firstWord}
+                onChange={(e) => setFirstWord(e.target.value)}
+                placeholder="マインドマップの中心となるワードを入力してください"
+                fullWidth
+                inputProps={{ maxLength: 50 }}
+                variant="outlined"
+                helperText="このワードがマインドマップの中心ノードとして表示されます"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2196F3',
+                      borderWidth: 2,
+                    }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#1976D2',
+                    fontWeight: 600
+                  },
+                  '& .MuiFormHelperText-root': {
+                    color: '#1976D2',
+                    fontSize: '0.8rem'
+                  }
+                }}
+              />
+            </Box>
           ) : (
-            <form onSubmit={handleAutoGenerate} className={styles.form}>
-              <div className={styles.autoGenerateInfo}>
-                <p className={styles.description}>
-                  AIがキーワードから関連する言葉を自動生成し、マインドマップを作成します
-                </p>
-              </div>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ 
+                background: 'linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(25, 118, 210, 0.1) 100%)',
+                padding: 2,
+                borderRadius: 2,
+                border: '1px solid #E3F2FD'
+              }}>
+                <Typography variant="body2" sx={{ color: '#1976D2', fontWeight: 500 }}>
+                  🚀 AIがキーワードから関連する言葉を自動生成し、マインドマップを作成します
+                </Typography>
+              </Box>
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="auto-title" className={styles.label}>
-                  タイトル
-                </label>
-                <input
-                  id="auto-title"
-                  type="text"
-                  value={autoTitle}
-                  onChange={(e) => setAutoTitle(e.target.value)}
-                  placeholder="マインドマップのタイトルを入力してください"
-                  className={styles.input}
-                  maxLength={100}
-                  disabled={isGenerating}
-                />
-              </div>
+              <TextField
+                label="📝 タイトル"
+                value={autoTitle}
+                onChange={(e) => setAutoTitle(e.target.value)}
+                placeholder="マインドマップのタイトルを入力してください"
+                fullWidth
+                inputProps={{ maxLength: 100 }}
+                disabled={isGenerating}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2196F3',
+                      borderWidth: 2,
+                    }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#1976D2',
+                    fontWeight: 600
+                  }
+                }}
+              />
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="keyword" className={styles.label}>
-                  キーワード
-                </label>
-                <input
-                  id="keyword"
-                  type="text"
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  placeholder="例: 海、愛、夢、仕事"
-                  className={styles.input}
-                  maxLength={50}
-                  disabled={isGenerating}
-                />
-                <p className={styles.hint}>
-                  このキーワードを中心に関連する言葉が自動生成されます
-                </p>
-              </div>
+              <TextField
+                label="🔑 キーワード"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="例: 海、愛、夢、仕事"
+                fullWidth
+                inputProps={{ maxLength: 50 }}
+                disabled={isGenerating}
+                variant="outlined"
+                helperText="このキーワードを中心に関連する言葉が自動生成されます"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2196F3',
+                      borderWidth: 2,
+                    }
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#1976D2',
+                    fontWeight: 600
+                  },
+                  '& .MuiFormHelperText-root': {
+                    color: '#1976D2',
+                    fontSize: '0.8rem'
+                  }
+                }}
+              />
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="mode" className={styles.label}>
-                  生成モード
-                </label>
-                <select
-                  id="mode"
+              <FormControl fullWidth disabled={isGenerating}>
+                <InputLabel sx={{ '&.Mui-focused': { color: '#1976D2', fontWeight: 600 } }}>
+                  ⚙️ 生成モード
+                </InputLabel>
+                <Select
                   value={mode}
+                  label="⚙️ 生成モード"
                   onChange={(e) => setMode(e.target.value as 'noun' | 'poetic')}
-                  className={styles.select}
-                  disabled={isGenerating}
+                  sx={{
+                    borderRadius: 2,
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#2196F3',
+                      borderWidth: 2,
+                    }
+                  }}
                 >
-                  <option value="noun">名詞モード（具体的な言葉）</option>
-                  <option value="poetic" disabled>詩的モード（美しい表現）※現在利用不可</option>
-                </select>
-                <p className={styles.hint}>
+                  <MenuItem value="noun">📚 名詞モード（具体的な言葉）</MenuItem>
+                  <MenuItem value="poetic" disabled>🎨 詩的モード（美しい表現）※現在利用不可</MenuItem>
+                </Select>
+                <FormHelperText sx={{ color: '#1976D2', fontSize: '0.8rem' }}>
                   {mode === 'noun' 
                     ? '具体的で実用的な関連語を生成します' 
                     : '詩的で美しい表現を生成します（現在利用不可）'
                   }
-                </p>
-              </div>
+                </FormHelperText>
+              </FormControl>
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="generations" className={styles.label}>
-                  世代数
-                </label>
-                <select
-                  id="generations"
+              <FormControl fullWidth disabled={isGenerating}>
+                <InputLabel sx={{ '&.Mui-focused': { color: '#1976D2', fontWeight: 600 } }}>
+                  🌱 世代数
+                </InputLabel>
+                <Select
                   value={generations}
-                  onChange={(e) => setGenerations(parseInt(e.target.value))}
-                  className={styles.select}
-                  disabled={isGenerating}
+                  label="🌱 世代数"
+                  onChange={(e) => setGenerations(typeof e.target.value === 'string' ? parseInt(e.target.value) : e.target.value as number)}
+                  sx={{
+                    borderRadius: 2,
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#2196F3',
+                      borderWidth: 2,
+                    }
+                  }}
                 >
-                  <option value={2}>2世代（キーワード + 連想語）</option>
-                  <option value={3}>3世代（階層的な連想）</option>
-                </select>
-                <p className={styles.hint}>
+                  <MenuItem value={2}>🌿 2世代（キーワード + 連想語）</MenuItem>
+                  <MenuItem value={3}>🌳 3世代（階層的な連想）</MenuItem>
+                </Select>
+                <FormHelperText sx={{ color: '#1976D2', fontSize: '0.8rem' }}>
                   世代数が多いほど詳細な連想マップになります。世代数3の場合、第1世代（キーワード）→第2世代（6つの連想語）→第3世代（各3つの連想語）が生成されます
-                </p>
-              </div>
-              
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className={styles.cancelButton}
-                  disabled={isGenerating}
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="submit"
-                  disabled={!keyword.trim() || !autoTitle.trim() || isGenerating}
-                  className={styles.confirmButton}
-                >
-                  {isGenerating ? '生成中...' : '🚀 自動生成開始'}
-                </button>
-              </div>
-            </form>
+                </FormHelperText>
+              </FormControl>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ 
+        px: 4, 
+        pb: 4, 
+        pt: 2,
+        position: 'relative', 
+        zIndex: 1,
+        background: 'rgba(255, 255, 255, 0.98)',
+        gap: 2
+      }}>
+        <Button 
+          onClick={handleClose}
+          disabled={isGenerating}
+          color="inherit"
+          sx={{
+            borderRadius: 2,
+            fontWeight: 600,
+            px: 3,
+            py: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.05)'
+            }
+          }}
+        >
+          キャンセル
+        </Button>
+        <Button
+          onClick={activeTab === 'manual' ? handleManualSubmit : handleAutoGenerate}
+          disabled={
+            activeTab === 'manual' 
+              ? !title.trim() || !firstWord.trim()
+              : !keyword.trim() || !autoTitle.trim() || isGenerating
+          }
+          variant="contained"
+          startIcon={
+            isGenerating ? <CircularProgress size={20} color="inherit" /> : 
+            activeTab === 'auto' ? <RocketLaunchIcon /> : null
+          }
+          sx={{
+            background: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+            borderRadius: 2,
+            fontWeight: 600,
+            px: 4,
+            py: 1.5,
+            boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #1976D2 0%, #1565C0 100%)',
+              boxShadow: '0 6px 16px rgba(33, 150, 243, 0.4)',
+              transform: 'translateY(-1px)'
+            },
+            '&:disabled': {
+              background: 'rgba(0, 0, 0, 0.12)',
+              color: 'rgba(0, 0, 0, 0.26)'
+            }
+          }}
+        >
+          {isGenerating ? '生成中...' : activeTab === 'manual' ? '作成' : '自動生成開始'}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

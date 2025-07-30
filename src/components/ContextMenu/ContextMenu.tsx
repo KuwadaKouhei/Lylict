@@ -66,16 +66,21 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ top, left, onAdd, onDelete, o
     }
   };
 
+  // モバイル対応の位置調整
+  const isMobile = window.innerWidth <= 768;
+  const adjustedTop = isMobile ? Math.min(top, window.innerHeight - 250) : top;
+  const adjustedLeft = isMobile ? Math.min(left, window.innerWidth - 180) : left;
+
   return (
     <Paper 
       elevation={3}
       style={{ 
         position: 'absolute', 
-        top, 
-        left, 
+        top: adjustedTop, 
+        left: adjustedLeft, 
         padding: 0,
         zIndex: 1000,
-        minWidth: '160px',
+        minWidth: isMobile ? '140px' : '160px',
         borderRadius: '8px',
         overflow: 'hidden'
       }}
