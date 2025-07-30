@@ -249,6 +249,16 @@ a {
   .react-flow .react-flow__handle-right:hover {
     right: -10px !important;
   }
+  
+  /* フローティングボタンの表示確保 */
+  .MuiFab-root {
+    z-index: 1500 !important;
+  }
+  
+  /* ズームコントロールの表示確保 */
+  .MuiPaper-root {
+    z-index: 1500 !important;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

@@ -34,10 +34,10 @@ const rotate = keyframes`
 `;
 
 const StyledFab = styled(Fab)(({ theme }) => ({
-  position: 'absolute',
+  position: 'fixed',
   bottom: 24,
   right: 24,
-  zIndex: 1000,
+  zIndex: 1500,
   background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
   boxShadow: '0 8px 16px rgba(25, 118, 210, 0.3)',
   animation: `${pulse} 2s infinite`,
@@ -47,15 +47,15 @@ const StyledFab = styled(Fab)(({ theme }) => ({
   [theme.breakpoints.down('md')]: {
     bottom: 20,
     right: 20,
-    width: 48,
-    height: 48,
+    width: 52,
+    height: 52,
   },
   
   [theme.breakpoints.down('sm')]: {
-    bottom: 16,
+    bottom: 20,
     right: 16,
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
   },
   
   '&:hover': {

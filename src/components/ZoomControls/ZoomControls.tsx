@@ -7,10 +7,10 @@ import { useReactFlow } from '@xyflow/react';
 import { styled } from '@mui/material/styles';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  position: 'absolute',
+  position: 'fixed',
   bottom: 24,
   left: 24,
-  zIndex: 1000,
+  zIndex: 1500,
   backgroundColor: 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(10px)',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -23,9 +23,9 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   },
   
   [theme.breakpoints.down('sm')]: {
-    bottom: 16,
+    bottom: 20,
     left: 16,
-    transform: 'scale(0.9)',
+    transform: 'scale(1.0)',
   },
 }));
 
