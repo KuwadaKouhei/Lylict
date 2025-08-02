@@ -1,8 +1,8 @@
 import React from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '../../lib/store';
-import { addNode } from '../../lib/features/mindmap/mindmapSlice';
+import { RootState, AppDispatch } from '@/lib/store';
+import { addNode } from '@/lib/features/mindmap/mindmapSlice';
 import { Node } from '@xyflow/react';
 import FloatingAddButton from '../FloatingAddButton/FloatingAddButton';
 import ZoomControls from '../ZoomControls/ZoomControls';

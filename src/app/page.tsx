@@ -12,7 +12,6 @@ import { User } from 'firebase/auth';
 import TitleInputModal from '@/components/TitleInputModal';
 import LoginButton from '@/components/LoginButton';
 import { fetchGenerationalAssociations, fetchAssociations } from '@/lib/aiApiService';
-import { autoDiscoverAPIEndpoint } from '@/lib/awsService';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -23,12 +22,7 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState('');
   const [user, setUser] = useState<User | null>(null);
-  const [apiStatus, setApiStatus] = useState<{
-    status: 'checking' | 'connected' | 'disconnected';
-    endpoint?: string;
-    publicIp?: string;
-    message?: string;
-  }>({ status: 'checking' });
+
   const router = useRouter();
   const dispatch: AppDispatch = useDispatch();
 
@@ -44,39 +38,6 @@ export default function Home() {
         setLoading(false); // 未認証の場合はローディングを終了
       }
     });
-    
-    // API状態チェックと動的IP検出
-    const checkApiStatus = async () => {
-      setApiStatus({ status: 'checking', message: 'AWS ECSからパブリックIP取得中...' });
-      
-      try {
-        const result = await autoDiscoverAPIEndpoint();
-        
-        if (result.success && result.apiUrl && result.publicIp) {
-          setApiStatus({
-            status: 'connected',
-            endpoint: result.apiUrl,
-            publicIp: result.publicIp,
-            message: `API接続成功 (${result.publicIp})`
-          });
-        } else {
-          setApiStatus({
-            status: 'disconnected',
-            message: result.error || 'API接続に失敗しました'
-          });
-          console.warn('⚠️ AWS ECS動的IP検出失敗:', result.error);
-        }
-      } catch (error) {
-        setApiStatus({
-          status: 'disconnected',
-          message: 'API状態チェックでエラーが発生しました'
-        });
-        console.error('❌ API状態チェックエラー:', error);
-      }
-    };
-    
-    // 初回実行
-    checkApiStatus();
     
     // コンポーネントのアンマウント時にローディング状態をリセット
     return () => {
@@ -312,8 +273,10 @@ export default function Home() {
       // 高度な衝突検出とレイアウト最適化システム
       
       // エッジの交差を検出する関数（改良版）
-      const doLinesIntersect = (line1: { start: { x: number, y: number }, end: { x: number, y: number } }, 
-                               line2: { start: { x: number, y: number }, end: { x: number, y: number } }) => {
+      const doLinesIntersect = (
+        line1: { start: { x: number, y: number }, end: { x: number, y: number } }, 
+        line2: { start: { x: number, y: number }, end: { x: number, y: number } }
+      ) => {
         const { start: p1, end: p2 } = line1;
         const { start: p3, end: p4 } = line2;
         
@@ -756,21 +719,6 @@ export default function Home() {
           <div className={styles.titleSection}>
             <h1 className={styles.title}>Lylict</h1>
             <p className={styles.subtitle}>アイデアを可視化し、創造性を解き放とう</p>
-            
-            {/* API状態表示 */}
-            <div className={styles.apiStatus}>
-              {apiStatus.status === 'checking' && (
-                <span className={styles.apiChecking}>🔍 {apiStatus.message}</span>
-              )}
-              {apiStatus.status === 'connected' && (
-                <span className={styles.apiConnected}>
-                  ✅ API接続中 {apiStatus.publicIp && `(${apiStatus.publicIp})`}
-                </span>
-              )}
-              {apiStatus.status === 'disconnected' && (
-                <span className={styles.apiDisconnected}>❌ {apiStatus.message}</span>
-              )}
-            </div>
           </div>
           <LoginButton user={user} onUserChange={setUser} />
         </div>

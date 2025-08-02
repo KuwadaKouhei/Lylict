@@ -17,7 +17,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '../../lib/store';
+import { RootState, AppDispatch } from '@/lib/store';
 import { 
   setNodes, 
   setEdges, 
@@ -25,7 +25,7 @@ import {
   removeNode, 
   addEdge as mindmapAddEdge, 
   updateNodeColor 
-} from '../../lib/features/mindmap/mindmapSlice';
+} from '@/lib/features/mindmap/mindmapSlice';
 import ContextMenu from '../ContextMenu/ContextMenu';
 import CustomNode from '../CustomNode/CustomNode';
 import FloatingEdge from '../CustomNode/FloatingEdge';

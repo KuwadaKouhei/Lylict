@@ -1,7 +1,7 @@
 
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { Node, Edge } from '@xyflow/react';
-import { MindMap, getAllMindMaps, getMindMap, saveMindMap, updateMindMap, deleteMindMap } from '../../mindmapService';
+import { MindMap, getAllMindMaps, getMindMap, saveMindMap, updateMindMap, deleteMindMap } from '@/mindmapService';
 
 interface MindmapState {
   nodes: Node[];

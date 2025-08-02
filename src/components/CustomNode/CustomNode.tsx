@@ -2,8 +2,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setNodes } from '../../lib/features/mindmap/mindmapSlice';
-import { RootState } from '../../lib/store';
+import { setNodes } from '@/lib/features/mindmap/mindmapSlice';
+import { RootState } from '@/lib/store';
 import { styled, keyframes } from '@mui/material/styles';
 
 // 現代風ノード生成アニメーション

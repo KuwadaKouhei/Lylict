@@ -22,7 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '../../lib/store';
+import { RootState, AppDispatch } from '@/lib/store';
 import {
   fetchAllMindMaps,
   loadMindMap,
@@ -31,7 +31,7 @@ import {
   createNewMindMap,
   setCurrentMindMapTitle,
   clearError,
-} from '../../lib/features/mindmap/mindmapSlice';
+} from '@/lib/features/mindmap/mindmapSlice';
 
 interface SidebarProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { Typography } from '@mui/material';
 import MindMapPageClient from './MindMapPageClient';
-import MindMapErrorBoundary from '../../components/ErrorBoundary/MindMapErrorBoundary';
+import MindMapErrorBoundary from '@/components/ErrorBoundary/MindMapErrorBoundary';
 
 // Server Component - SEO最適化とSSR対応
 export default function MindMapPage() {

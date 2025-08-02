@@ -5,7 +5,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // AWS ECS動的IP検出機能付きのAPI URL取得
     const apiUrl = await getApiUrl();
     const endpoint = `${apiUrl}/api/v1/associate`;
     
@@ -58,7 +57,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // AWS ECS動的IP検出機能付きのAPI URL取得
     const apiUrl = await getApiUrl();
     const endpoint = `${apiUrl}/api/v1/associate?word=${encodeURIComponent(word)}&count=${count}&mode=${mode}&generation=${generation}`;
     
@@ -98,12 +96,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// AWS ECS動的IP検出機能
+// AWS ECS IP検出機能
 async function getApiUrl(): Promise<string> {
   // フォールバック用のデフォルトURL
   let apiUrl = process.env.NEXT_PUBLIC_W2V_API_BASE_URL || 'http://57.182.235.147:8080';
   
-  // AWS認証情報が設定されている場合のみ動的検出を実行
   if (process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID && process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY) {
     try {
       const { ECSClient, ListTasksCommand, DescribeTasksCommand } = await import('@aws-sdk/client-ecs');
@@ -129,7 +126,7 @@ async function getApiUrl(): Promise<string> {
         }
       });
 
-      // ECSタスク一覧を取得
+      // ECS タスク一覧取得
       const listTasksResponse = await ecsClient.send(new ListTasksCommand({
         cluster: CLUSTER_NAME,
         serviceName: SERVICE_NAME,
@@ -137,7 +134,7 @@ async function getApiUrl(): Promise<string> {
       }));
       
       if (listTasksResponse.taskArns && listTasksResponse.taskArns.length > 0) {
-        // タスクの詳細を取得
+        // タスク詳細取得
         const taskDetailsResponse = await ecsClient.send(new DescribeTasksCommand({
           cluster: CLUSTER_NAME,
           tasks: listTasksResponse.taskArns
@@ -171,7 +168,7 @@ async function getApiUrl(): Promise<string> {
   return apiUrl;
 }
 
-// OPTIONSメソッドの処理（CORS preflight）
+// OPTIONS処理
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,

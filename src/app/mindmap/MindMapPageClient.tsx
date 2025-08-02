@@ -4,15 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { User } from 'firebase/auth';
 import { Typography } from '@mui/material';
-import { RootState } from '../../lib/store';
-import { onAuthStateChange, handleRedirectResult } from '../../lib/auth';
-import { useMindMapActions } from '../../hooks/useMindMapActions';
-import { useMindMapInitialization } from '../../hooks/useMindMapInitialization';
-import MindMapLayout from '../../components/MindMapLayout/MindMapLayout';
-import MindMapHeader from '../../components/MindMapHeader/MindMapHeader';
-import MindMapFlowDynamic from '../../components/MindMapFlow/MindMapFlowDynamic';
-import Sidebar from '../../components/Sidebar/Sidebar';
-import LoginPrompt from '../../components/LoginPrompt';
+import { RootState } from '@/lib/store';
+import { onAuthStateChange, handleRedirectResult } from '@/lib/auth';
+import { useMindMapActions } from '@/hooks/useMindMapActions';
+import { useMindMapInitialization } from '@/hooks/useMindMapInitialization';
+import MindMapLayout from '@/components/MindMapLayout/MindMapLayout';
+import MindMapHeader from '@/components/MindMapHeader/MindMapHeader';
+import MindMapFlowDynamic from '@/components/MindMapFlow/MindMapFlowDynamic';
+import Sidebar from '@/components/Sidebar/Sidebar';
+import LoginPrompt from '@/components/LoginPrompt';
 
 export default function MindMapPageClient() {
   const { currentMindMapTitle, isLoading, nodes, edges } = useSelector((state: RootState) => state.mindmap);
