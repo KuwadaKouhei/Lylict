@@ -100,15 +100,6 @@ const CustomNode: React.FC<NodeProps<any>> = ({ data, id, selected }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [label, setLabel] = useState(data.label);
   const [isNew, setIsNew] = useState(data.isNew || false);
-  
-  // デバッグログ: CustomNodeで受け取ったデータを確認
-  console.log('🎯 CustomNode レンダリング:', {
-    id: id,
-    data: data,
-    label: data?.label,
-    selected: selected,
-    isEditing: isEditing
-  });
 
   // アニメーション完了後にisNewフラグをクリア
   useEffect(() => {

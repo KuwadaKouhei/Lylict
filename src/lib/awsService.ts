@@ -30,8 +30,6 @@ const ec2Client = new EC2Client({
  */
 export const getECSServicePublicIP = async (): Promise<string | null> => {
   try {
-    console.log('🔍 ECSサービスのパブリックIP取得を開始...');
-    
     // 1. 起動中のタスク一覧を取得
     const listTasksCommand = new ListTasksCommand({
       cluster: CLUSTER_NAME,
@@ -49,9 +47,6 @@ export const getECSServicePublicIP = async (): Promise<string | null> => {
     // 最新のタスクを取得
     const latestTaskArn = tasksResponse.taskArns[0];
     const taskId = latestTaskArn.split('/').pop();
-    
-    console.log(`📋 タスクID: ${taskId}`);
-    
     // 2. タスクの詳細情報を取得
     const describeTasksCommand = new DescribeTasksCommand({
       cluster: CLUSTER_NAME,
@@ -78,8 +73,6 @@ export const getECSServicePublicIP = async (): Promise<string | null> => {
       return null;
     }
     
-    console.log(`🔌 ネットワークインターフェースID: ${networkInterfaceId}`);
-    
     // 4. ネットワークインターフェースからパブリックIPを取得
     const describeNetworkInterfacesCommand = new DescribeNetworkInterfacesCommand({
       NetworkInterfaceIds: [networkInterfaceId]
@@ -95,7 +88,6 @@ export const getECSServicePublicIP = async (): Promise<string | null> => {
     const publicIp = networkResponse.NetworkInterfaces[0].Association?.PublicIp;
     
     if (publicIp) {
-      console.log(`✅ パブリックIP取得成功: ${publicIp}`);
       return publicIp;
     } else {
       console.warn('⚠️ パブリックIPが見つかりません');
@@ -113,12 +105,7 @@ export const getECSServicePublicIP = async (): Promise<string | null> => {
  * 本番環境（HTTPS）では直接テストをスキップ
  */
 export const testAPIConnection = async (publicIp: string): Promise<boolean> => {
-  // 本番環境（HTTPS）では直接HTTP APIテストをスキップ
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    console.log('🔒 本番環境: HTTP API直接テストをスキップ（Mixed Content回避）');
-    return true; // 本番環境では常に成功として扱う
-  }
-  
+
   try {
     console.log(`🧪 開発環境でAPIテスト開始: http://${publicIp}:8080`);
     
