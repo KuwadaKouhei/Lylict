@@ -74,6 +74,16 @@ export const getCurrentUser = (): User | null => {
   return auth.currentUser;
 };
 
+// より安全な認証チェック関数（Promiseベース）
+export const waitForAuthState = (): Promise<User | null> => {
+  return new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe();
+      resolve(user);
+    });
+  });
+};
+
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };

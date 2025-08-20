@@ -11,7 +11,7 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { getCurrentUser } from './auth';
+import { getCurrentUser, waitForAuthState } from './auth';
 import { Node, Edge } from '@xyflow/react';
 
 export interface MindMap {
@@ -26,13 +26,30 @@ export interface MindMap {
 
 const COLLECTION_NAME = 'mindmaps';
 
-// 認証チェック関数
-const requireAuth = (): string => {
-  const user = getCurrentUser();
+// 認証チェック関数（改良版）
+const requireAuth = async (waitForAuth = false): Promise<string> => {
+  let user = getCurrentUser();
+  
+  // 認証状態を待機するオプション
+  if (!user && waitForAuth) {
+    console.log('認証状態を待機中...');
+    user = await waitForAuthState();
+  }
+  
+  console.log('requireAuth実行時の認証状態:', {
+    user: user,
+    uid: user?.uid,
+    displayName: user?.displayName,
+    email: user?.email,
+    isAuthenticated: !!user,
+    waitForAuth: waitForAuth
+  });
+  
   if (!user) {
     console.warn('認証が必要です。ユーザーがログインしていません。');
     throw new Error('AUTHENTICATION_REQUIRED');
   }
+  
   console.log('認証済みユーザー:', user.uid);
   return user.uid;
 };
@@ -40,7 +57,7 @@ const requireAuth = (): string => {
 // マインドマップを保存
 export const saveMindMap = async (mindmap: Omit<MindMap, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<string> => {
   try {
-    const userId = requireAuth();
+    const userId = await requireAuth();
     const now = new Date();
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       ...mindmap,
@@ -58,7 +75,7 @@ export const saveMindMap = async (mindmap: Omit<MindMap, 'id' | 'createdAt' | 'u
 // マインドマップを更新
 export const updateMindMap = async (id: string, mindmap: Omit<MindMap, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<void> => {
   try {
-    const userId = requireAuth();
+    const userId = await requireAuth();
     const docRef = doc(db, COLLECTION_NAME, id);
     
     // 更新前に所有者チェック
@@ -85,14 +102,28 @@ export const updateMindMap = async (id: string, mindmap: Omit<MindMap, 'id' | 'c
 // ユーザーのマインドマップを取得
 export const getAllMindMaps = async (): Promise<MindMap[]> => {
   try {
-    const userId = requireAuth();
+    // 認証状態を確実に待機
+    const userId = await requireAuth(true);
+    
+    console.log('Firestore クエリ実行中:', {
+      collection: COLLECTION_NAME,
+      userId: userId,
+      queryType: 'where userId == userId'
+    });
     
     // インデックスエラーの回避策：orderByを削除して、クライアント側でソート
     const q = query(
       collection(db, COLLECTION_NAME), 
       where('userId', '==', userId)
     );
+    
+    console.log('クエリ送信前の状態確認完了');
     const querySnapshot = await getDocs(q);
+    console.log('Firestoreクエリ結果:', {
+      docsCount: querySnapshot.docs.length,
+      isEmpty: querySnapshot.empty
+    });
+    
     const mindmaps = querySnapshot.docs.map(doc => {
       const data = doc.data();
       return {
@@ -104,7 +135,13 @@ export const getAllMindMaps = async (): Promise<MindMap[]> => {
     }) as MindMap[];
     
     // クライアント側でupdatedAtの降順ソート
-    return mindmaps.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    const sortedMindmaps = mindmaps.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    console.log('最終結果:', {
+      count: sortedMindmaps.length,
+      mindmaps: sortedMindmaps.map(m => ({ id: m.id, title: m.title }))
+    });
+    
+    return sortedMindmaps;
   } catch (error) {
     console.error('Error getting mindmaps:', error);
     throw error;
@@ -114,7 +151,7 @@ export const getAllMindMaps = async (): Promise<MindMap[]> => {
 // 特定のマインドマップを取得
 export const getMindMap = async (id: string): Promise<MindMap | null> => {
   try {
-    const userId = requireAuth();
+    const userId = await requireAuth();
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
     
@@ -144,7 +181,7 @@ export const getMindMap = async (id: string): Promise<MindMap | null> => {
 // マインドマップを削除
 export const deleteMindMap = async (id: string): Promise<void> => {
   try {
-    const userId = requireAuth();
+    const userId = await requireAuth();
     const docRef = doc(db, COLLECTION_NAME, id);
     
     // 削除前に所有者チェック
