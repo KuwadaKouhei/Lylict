@@ -30,8 +30,10 @@ const COLLECTION_NAME = 'mindmaps';
 const requireAuth = (): string => {
   const user = getCurrentUser();
   if (!user) {
+    console.warn('認証が必要です。ユーザーがログインしていません。');
     throw new Error('AUTHENTICATION_REQUIRED');
   }
+  console.log('認証済みユーザー:', user.uid);
   return user.uid;
 };
 

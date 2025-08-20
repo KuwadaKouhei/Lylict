@@ -1,15 +1,40 @@
-# Firebase Authentication 設定ガイド
+# Firebase Authentication & Firestore 設定ガイド
 
-## 現在のエラーについて
-`Firebase: Error (auth/configuration-not-found)` エラーが発生している原因は、Firebase Authentication が正しく設定されていないか、Google ログインプロバイダーが有効化されていない可能性があります。
+## 🚨 現在のエラーについて
+`FirebaseError: Missing or insufficient permissions` エラーが発生している原因は、Firestoreのセキュリティルールが正しく設定されていない可能性があります。
 
-## 修正手順
+## 🔧 緊急修正手順
 
 ### 1. Firebase Console にアクセス
 1. [Firebase Console](https://console.firebase.google.com/) を開く
 2. プロジェクト `ideaweaver-app` を選択
 
-### 2. Authentication の設定
+### 2. Firestore Database のセキュリティルール設定
+1. 左サイドバーから「Firestore Database」をクリック
+2. 「ルール」タブをクリック
+3. 現在のルールを以下に置き換え：
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // マインドマップのコレクションのルール
+    match /mindmaps/{document} {
+      // 認証済みユーザーのみアクセス可能
+      allow create: if request.auth != null 
+                    && request.auth.uid == request.resource.data.userId;
+      
+      // 読み取り, 更新, 削除: 認証済みユーザーで、自分が作成したドキュメントのみ
+      allow read, update, delete: if request.auth != null 
+                                  && request.auth.uid == resource.data.userId;
+    }
+  }
+}
+```
+
+4. 「公開」をクリックして保存
+
+### 3. Authentication の設定確認
 1. 左サイドバーから「Authentication」をクリック
 2. 「Get started」ボタンが表示されている場合はクリック
 3. 「Sign-in method」タブをクリック

@@ -51,6 +51,14 @@ export default function Home() {
     try {
       setLoading(true);
       setError(null);
+      
+      // 認証状態を詳細チェック
+      console.log('loadMindMaps 実行時の認証状態:', {
+        user: user,
+        uid: user?.uid,
+        isAuthenticated: !!user
+      });
+      
       const maps = await getAllMindMaps();
       setMindMaps(maps);
     } catch (err: any) {
